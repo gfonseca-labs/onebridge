@@ -1,6 +1,13 @@
 # Changelog
 
-## 0.2.0
+## Unreleased
+
+- Correct even-count medians in run summaries and reject duplicate road-review
+  decisions and duplicate or unknown affected outcome records.
+- Clarify reproduction, output failure behavior, ranking semantics, map coverage
+  and the boundaries of historical validation in public documentation.
+
+## [0.2.0](https://github.com/gfonseca-labs/onebridge/releases/tag/v0.2.0) — 2026-11-07
 
 First public version of the NYC hospital-access closure study.
 
@@ -25,8 +32,9 @@ First public version of the NYC hospital-access closure study.
 - Evidence schema 1.1.0. Run metadata is limited to run ID, start time, and
   package and Python versions.
 
-This version reproduces the internal study build exactly, apart from the
-format of ordinary-segment names. Names are now the sorted distinct `name`
+Release preparation reported agreement with an earlier study build, apart
+from the format of ordinary-segment names. Public reproduction uses the
+release extraction and report; the earlier build is not a required input. Names are now the sorted distinct `name`
 tags of the segment's source ways, or an empty list when unnamed. Before,
 they were OSMnx's merged edge attribute, whose list order depended on Python's
 string hashing. Routes, rankings and scores are unchanged; in `evidence.json`

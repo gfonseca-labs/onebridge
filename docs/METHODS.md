@@ -72,6 +72,14 @@ for the city's business-district U-turn ban, which OSM does not map.
 Relations that cannot be represented (missing members or unsupported shapes)
 are counted in the run output.
 
+That count covers recognized active restrictions only. Vehicle-specific tags
+are not comprehensively supported: the primary configuration reads generic
+unconditional `restriction` values, while `restriction:motorcar` is included
+with conditional rules in the sensitivity. The sensitivity activates those
+rules without evaluating a departure clock. Ignored tag families are not
+included in the unrepresented count. This is a limitation of v0.2.0, not a
+complete interpretation of every OSM car restriction.
+
 ## Origins
 
 Candidate origins are UTM 18N grid points at 500 m (primary) and 250 m
@@ -95,9 +103,8 @@ grid cell.
 
 ## Emergency departments
 
-The 18 EDs are general hospital emergency departments in the NY and NJ state
-facility lists that serve the study area and have a verifiable public road
-approach:
+The study includes 18 ED destinations identified using the NY and NJ state
+facility lists and a review of public road approaches:
 
 | ID | Hospital | ID | Hospital |
 | --- | --- | --- | --- |
@@ -122,8 +129,12 @@ two kinds of arrival point:
 - **Entrances:** reviewed points on usable roads at the ED's published or
   mapped entrance. Where no entrance is published, the point is at the
   hospital's street address.
-- **Campus frontage:** every usable `residential`-to-`primary` road within
-  20 m of the campus, not on a bridge, in a tunnel or on a non-zero layer.
+- **Campus frontage:** usable `residential`-to-`primary` roads selected by
+  a search whose edge start node lies strictly inside the campus's 60 m
+  buffered bounding box, and whose line lies within 20 m of the campus.
+  Roads fully within the campus, bridges, tunnels and non-zero layers are excluded.
+  Long edges passing near a campus can be missed when their start node lies
+  outside that search box.
   - The arrival point is the road point closest to the campus.
   - Within 1 cm of an edge end, that end node is used instead of a split.
   - The context review removed 19 frontage points, for a mapped access
@@ -142,8 +153,11 @@ The door and the final walk are not modeled.
 - **River crossings.** 21 reviewed corridors across the Hudson, East and
   Harlem rivers, each closed as a whole.
 
-Only candidates on at least one baseline route of a run in the same buffer
-are evaluated: a closure off every route cannot change any nearest-ED time.
+Ordinary segments and local structures are screened against the union of
+baseline routes from every run in the same buffer. Nonempty reviewed
+river-crossing corridors are always evaluated, including those off every
+baseline route. A closure off every baseline route cannot change nearest-ED
+time; such crossing scenarios have zero effect.
 Closures of an origin's departure edge or an ED's arrival edge measure the endpoint
 convention rather than network rerouting. They are reported separately in
 `endpoint_convention.csv`.
@@ -173,11 +187,14 @@ The test suite checks the engine against independent implementations:
   restrictions;
 - routes against an independent turn-restriction audit.
 
-Each preparation stage was checked against the original study build:
+Release preparation reported agreement with an earlier study build for
+road extraction, usable edges and times, origins, departures, Census weights,
+hospital arrivals and closure candidates. That comparison is historical
+evidence, not a public independent reference implementation. Ordinary-segment
+names were normalized to a stable order (see the changelog).
 
-- the road extract, usable edges and travel times;
-- the origins, departures and census weights;
-- the hospital arrivals and closure candidates.
-
-All matched exactly. The one exception is the format of ordinary-segment
-names (see the changelog).
+Public verification uses the tests, committed source tables, release extraction
+and report, and the [rebuild procedure](REPRODUCE.md). CI does not run the full
+NYC rebuild. Agreement between implementations verifies algorithm behavior on
+their inputs; it does not independently validate curated source decisions or
+real-world travel times.

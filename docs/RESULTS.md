@@ -12,6 +12,13 @@ Primary configuration: 500 m grid, 10 km buffer, baseline speeds, turn-aware.
 - 12 of the 18 EDs are the nearest ED for at least one origin.
 - On the 250 m grid, 350 of 353 origins reach an ED.
 
+The published map shows the 13 EDs selected by at least one primary baseline
+or main-ranking closure route. All 18 EDs are considered by routing; the map
+does not display the five that are never selected in those outcomes.
+The 2.52-minute figure is the conventional median of the released baseline
+outcomes. The v0.2.0 run summary instead selects the upper middle value for
+even counts, yielding 2.53 minutes; see [implementation limits](ARCHITECTURE.md).
+
 ## Leading closures
 
 The main ranking (`ranking.csv`) has 2,653 scenarios. Its leaders, by total

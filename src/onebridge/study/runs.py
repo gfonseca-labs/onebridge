@@ -13,6 +13,7 @@ import json
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+from statistics import median
 
 from shapely import prepare
 from shapely.geometry import Point
@@ -85,10 +86,12 @@ def run_study(bundle, outdir, runs=RUNS, log=print):
             for r in baseline.values()
             if r["status"] == "reachable"
         )
+        if not reached:
+            raise ValueError(f"{run.name}: no origin reaches a hospital")
         results[run.name] = {
             "origins": len(baseline),
             "reachable": len(reached),
-            "median_minutes": reached[len(reached) // 2],
+            "median_minutes": median(reached),
             "unrepresented_restrictions": case.unrepresented,
             "u_turn_banned_nodes": case.banned,
         }

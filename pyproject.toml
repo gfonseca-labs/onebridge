@@ -24,6 +24,10 @@ test = ["pytest>=8,<10"]
 [project.scripts]
 onebridge = "onebridge.cli:main"
 
+[project.urls]
+Repository = "https://github.com/gfonseca-labs/onebridge"
+Issues = "https://github.com/gfonseca-labs/onebridge/issues"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

@@ -2,12 +2,13 @@
 
 import json
 from itertools import pairwise
+from statistics import median
 
 import pytest
 
 from onebridge.cli import main
 from onebridge.study.demo import STREETS, write_bundle
-from onebridge.study.report import build_report
+from onebridge.study.report import build_report, complete_records
 from onebridge.study.runs import Run, run_study
 
 
@@ -31,6 +32,9 @@ def test_run_writes_routes_scenarios_and_rankings(bundle, tmp_path):
     }
     assert all(r["status"] == "reachable" for r in routes.values())
     assert all(r["hospital_id"] == "h-east" for r in routes.values())
+    assert summary["runs"][Run().name]["median_minutes"] == median(
+        r["travel_time_seconds"] / 60 for r in routes.values()
+    )
     # o-south starts on 4-5 and drives straight to the hospital node.
     assert routes["o-south"]["original_movements"][0] == [4, 5, 0]
 
@@ -97,3 +101,26 @@ def test_demo_command_runs_the_whole_study(tmp_path):
     ranking = (tmp_path / "demo/report/evidence/ranking.csv").read_text().splitlines()
     assert ranking[0].startswith("rank,closure_id,")
     assert ranking[1].split(",")[1].startswith("segment-")
+
+
+@pytest.mark.parametrize("case", ["duplicate", "unknown-origin", "unknown-closure"])
+def test_report_rejects_ambiguous_or_unknown_affected_records(case):
+    before = {"status": "reachable", "hospital_id": "h", "travel_time_seconds": 1.0}
+    baseline = {"o": before}
+    record = {
+        "closure_id": "c",
+        "origin_id": "o",
+        "baseline": before,
+        "scenario": before,
+        "finite_added_minutes": 0.0,
+        "newly_disconnected": False,
+    }
+    records = [record]
+    if case == "duplicate":
+        records.append(dict(record))
+    elif case == "unknown-origin":
+        record["origin_id"] = "other"
+    else:
+        record["closure_id"] = "other"
+    with pytest.raises(ValueError, match="duplicate|unknown"):
+        complete_records(["c"], ["o"], baseline, records)

@@ -48,16 +48,19 @@ OpenStreetMap:
 | --- | --- |
 | `onebridge-nyc-extract-2026-10-24.tar.gz` (49.9 MB) | `7b7e5b6cf70677e38d5475b285ec3ff70e0458aef2028e82f2565956535b11e6` |
 
-The release also carries the study's report,
+The [v0.2.0 release](https://github.com/gfonseca-labs/onebridge/releases/tag/v0.2.0)
+also carries the study's report,
 `onebridge-nyc-report-0.2.0.tar.gz` (7.6 MB): the evidence directory
 (`ranking.csv`, `route_outcomes.jsonl`, `endpoint_convention.csv`,
 `evidence.json`, `map.png`), `comparison.json` and the ranking tables of all
 10 configurations, under the same ODbL terms.
 
-It unpacks to `nyc-extract/`, with a `SHA256SUMS` list and an ODbL notice.
+The extraction archive unpacks to `nyc-extract/`; the report archive unpacks
+to `nyc-report/`. The extraction is packaged with a `SHA256SUMS` list and an ODbL notice.
 `scripts/package_release.py` rebuilds the identical archive from an
-extraction, and the extraction itself is byte-reproducible from the pinned
-PBFs.
+extraction, when the input bytes and compression environment match. Extraction from
+the pinned PBFs also depends on the software environment (see
+[reproduction limits](REPRODUCE.md)).
 
 The NYC endpoint serves the current version of the dataset. On 2026-11-07
 it served version 26c, byte-identical to the pinned file. If the city
@@ -86,8 +89,12 @@ graph.
 {"edge": [42421728, 3602679383, 0], "reasons": [], "usable": true}
 {"edge": [42421741, 42432756, 0], "reasons": ["NUMERICAL_COST_UNRESOLVED", "RAW_WAY_DIRECTIONAL_OR_CONDITIONAL_TAGS"], "usable": false}
 {"edge": [42464938, 42478403, 0], "reasons": [], "speed": {"mph": 20.0, "rule": "signed"}, "usable": true}
-{"edge": [42423514, 103879821, 0], "reasons": [], "speed": {"basis": "osm_source_segment_speeds", "rule": "segments", "seconds": {"baseline": 192.67, ...}}, "usable": true}
+{"edge": [42423514, 103879821, 0], "reasons": [], "speed": {"basis": "osm_source_segment_speeds", "rule": "segments", "seconds": {"baseline": 192.67, "outer35": 192.67, "special_slow": 192.67, "special_fast": 192.67}}, "usable": true}
 ```
+
+The examples illustrate field shapes; the segment-speed values above are
+illustrative, not authoritative source measurements. Use the committed rows
+for actual study values.
 
 A `signed` speed replaces the OSM limit with a reviewed signed limit; a
 `segments` speed gives the edge's travel time per scenario directly, costed
@@ -116,8 +123,11 @@ was considered; `lon`/`lat` are `null` where the state record has no point.
 `closures/<buffer>-crossings.jsonl.gz`: the river-crossing corridors.
 
 ```json
-{"corridor": "hudson-holland-tunnel", "river": "Hudson", "edges": [...], "ways": [...], "opened_edges": [...]}
+{"corridor": "hudson-holland-tunnel", "river": "Hudson", "edges": [], "ways": [], "opened_edges": []}
 ```
+
+The empty lists above illustrate the schema only; real corridor rows contain
+edge triples and way IDs.
 
 `opened_edges` are corridor edges that the crossing review made usable. They
 are closed only together with their corridor.
