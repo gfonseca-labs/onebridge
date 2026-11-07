@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Study data: downloads and everything generated from them stay local;
+# the reviewed source tables in data/nyc-sources are tracked.
+data/*
+!data/nyc-sources/
+out/
+
+# Editors and OS
+.DS_Store
+.vscode/
+.idea/
+.env
+.env.*

@@ -1,0 +1,357 @@
+{
+ "nj-nj10202": {
+  "lat": 40.90206,
+  "lon": -73.96839,
+  "name": "ENGLEWOOD HOSPITAL (NJ10202)"
+ },
+ "nj-nj10204": {
+  "lat": 40.88424,
+  "lon": -74.05682,
+  "name": "HACKENSACK UNIVERSITY MEDICAL CENTER (NJ10204)"
+ },
+ "nj-nj10701": {
+  "lat": 40.78425,
+  "lon": -74.17609,
+  "name": "CLARA MAASS MEDICAL CENTER (NJ10701)"
+ },
+ "nj-nj10702": {
+  "lat": 40.7405,
+  "lon": -74.19235,
+  "name": "UNIVERSITY HOSPITAL (NJ10702)"
+ },
+ "nj-nj10704": {
+  "lat": 40.75432,
+  "lon": -74.21365,
+  "name": "CAREWELL HEALTH MEDICAL CENTER (NJ10704)"
+ },
+ "nj-nj10708": {
+  "lat": 40.81232,
+  "lon": -74.20436,
+  "name": "HACKENSACK MERIDIAN MOUNTAINSIDE MEDICAL (NJ10708)"
+ },
+ "nj-nj10709": {
+  "lat": 40.71027,
+  "lon": -74.21418,
+  "name": "NEWARK BETH ISRAEL MEDICAL CENTER (NJ10709)"
+ },
+ "nj-nj10713": {
+  "lat": 40.74328,
+  "lon": -74.17425,
+  "name": "SAINT MICHAEL'S MEDICAL CENTER (NJ10713)"
+ },
+ "nj-nj10901": {
+  "lat": 40.66803,
+  "lon": -74.11332,
+  "name": "BAYONNE UNIVERSITY HOSPITAL (NJ10901)"
+ },
+ "nj-nj10902": {
+  "lat": 40.73463,
+  "lon": -74.0503,
+  "name": "HEIGHTS UNIVERSITY HOSPITAL (NJ10902)"
+ },
+ "nj-nj10904": {
+  "lat": 40.71516,
+  "lon": -74.05036,
+  "name": "JERSEY CITY MEDICAL CENTER (NJ10904)"
+ },
+ "nj-nj10905": {
+  "lat": 40.79394,
+  "lon": -73.99696,
+  "name": "PALISADES MEDICAL CENTER (NJ10905)"
+ },
+ "nj-nj10906": {
+  "lat": 40.79216,
+  "lon": -74.07297,
+  "name": "SECAUCUS UNIVERSITY HOSPITAL (NJ10906)"
+ },
+ "nj-nj10908": {
+  "lat": 40.74109,
+  "lon": -74.03358,
+  "name": "HOBOKEN UNIVERSITY HOSPITAL (NJ10908)"
+ },
+ "nj-nj11605": {
+  "lat": 40.90214,
+  "lon": -74.16649,
+  "name": "ST JOSEPH'S UNIVERSITY MEDICAL CENTER INC (NJ11605)"
+ },
+ "nj-nj11606": {
+  "lat": 40.85873,
+  "lon": -74.13717,
+  "name": "ST MARY'S GENERAL HOSPITAL (NJ11606)"
+ },
+ "nj-nj310008": {
+  "lat": 40.88298,
+  "lon": -74.01008,
+  "name": "HOLY NAME MEDICAL CENTER (NJ310008)"
+ },
+ "nj-nj310027": {
+  "lat": 40.65836,
+  "lon": -74.2147,
+  "name": "TRINITAS REGIONAL MEDICAL CENTER (NJ310027)"
+ },
+ "ny-1061": {
+  "lat": 40.912476,
+  "lon": -73.840004,
+  "name": "Montefiore Mount Vernon Hospital"
+ },
+ "ny-1072": {
+  "lat": 40.913021,
+  "lon": -73.787086,
+  "name": "Montefiore New Rochelle Hospital"
+ },
+ "ny-1098": {
+  "lat": 40.929512,
+  "lon": -73.896957,
+  "name": "St. Joseph's Medical Center"
+ },
+ "ny-1164": {
+  "lat": 40.831772,
+  "lon": -73.903656,
+  "name": "BronxCare Hospital Center"
+ },
+ "ny-1165": {
+  "lat": 40.857388,
+  "lon": -73.846741,
+  "name": "Jacobi Medical Center"
+ },
+ "ny-1168": {
+  "lat": 40.894569,
+  "lon": -73.86142,
+  "name": "Montefiore Medical Center-Wakefield Hospital"
+ },
+ "ny-1169": {
+  "lat": 40.87987,
+  "lon": -73.8799,
+  "name": "Montefiore Medical Center - Henry & Lucy Moses Div"
+ },
+ "ny-1172": {
+  "lat": 40.817661,
+  "lon": -73.92421,
+  "name": "Lincoln Medical & Mental Health Center"
+ },
+ "ny-1176": {
+  "lat": 40.853909,
+  "lon": -73.891014,
+  "name": "SBH Health System"
+ },
+ "ny-1178": {
+  "lat": 40.843609,
+  "lon": -73.911545,
+  "name": "BronxCare Hospital Center"
+ },
+ "ny-1185": {
+  "lat": 40.840431,
+  "lon": -73.848244,
+  "name": "Montefiore Medical Center - Montefiore Westchester Square"
+ },
+ "ny-1186": {
+  "lat": 40.880512,
+  "lon": -73.881538,
+  "name": "North Central Bronx Hospital"
+ },
+ "ny-1286": {
+  "lat": 40.655066,
+  "lon": -73.912579,
+  "name": "Brookdale Hospital Medical Center"
+ },
+ "ny-1288": {
+  "lat": 40.689842,
+  "lon": -73.977455,
+  "name": "Brooklyn Hospital Center - Downtown Campus"
+ },
+ "ny-1293": {
+  "lat": 40.613419,
+  "lon": -73.948967,
+  "name": "Maimonides Midwood Community Hospital"
+ },
+ "ny-1294": {
+  "lat": 40.58662,
+  "lon": -73.965797,
+  "name": "South Brooklyn Health"
+ },
+ "ny-1301": {
+  "lat": 40.655823,
+  "lon": -73.944099,
+  "name": "Kings County Hospital Center"
+ },
+ "ny-1304": {
+  "lat": 40.646591,
+  "lon": -74.020439,
+  "name": "NYU Langone Hospital-Brooklyn"
+ },
+ "ny-1305": {
+  "lat": 40.639423,
+  "lon": -73.99839,
+  "name": "Maimonides Medical Center"
+ },
+ "ny-1306": {
+  "lat": 40.668087,
+  "lon": -73.978905,
+  "name": "NewYork-Presbyterian Brooklyn Methodist Hospital"
+ },
+ "ny-1309": {
+  "lat": 40.67794,
+  "lon": -73.937515,
+  "name": "Interfaith Medical Center"
+ },
+ "ny-1318": {
+  "lat": null,
+  "lon": null,
+  "name": "Wyckoff Heights Medical Center"
+ },
+ "ny-1320": {
+  "lat": 40.654518,
+  "lon": -73.945045,
+  "name": "University Hospital of Brooklyn"
+ },
+ "ny-1324": {
+  "lat": 40.617954,
+  "lon": -73.94323,
+  "name": "Mount Sinai Brooklyn"
+ },
+ "ny-1437": {
+  "lat": 40.710426,
+  "lon": -74.005486,
+  "name": "New York-Presbyterian/Lower Manhattan Hospital"
+ },
+ "ny-1438": {
+  "lat": 40.739605,
+  "lon": -73.976509,
+  "name": "Bellevue Hospital Center"
+ },
+ "ny-1445": {
+  "lat": 40.81435,
+  "lon": -73.940506,
+  "name": "Harlem Hospital Center"
+ },
+ "ny-1450": {
+  "lat": 40.773907,
+  "lon": -73.960632,
+  "name": "Lenox Hill Hospital"
+ },
+ "ny-1454": {
+  "lat": 40.784775,
+  "lon": -73.94368,
+  "name": "Metropolitan Hospital Center"
+ },
+ "ny-1456": {
+  "lat": 40.790482,
+  "lon": -73.953766,
+  "name": "Mount Sinai Hospital"
+ },
+ "ny-1458": {
+  "lat": 40.76408,
+  "lon": -73.954926,
+  "name": "New York-Presbyterian Hospital - New York Weill Cornell Center"
+ },
+ "ny-1463": {
+  "lat": 40.742874,
+  "lon": -73.974159,
+  "name": "NYU Langone Hospitals"
+ },
+ "ny-1464": {
+  "lat": 40.84131,
+  "lon": -73.94065,
+  "name": "New York-Presbyterian Hospital - Columbia Presbyterian Center"
+ },
+ "ny-1466": {
+  "lat": 40.770092,
+  "lon": -73.987785,
+  "name": "Mount Sinai West"
+ },
+ "ny-1469": {
+  "lat": 40.805912,
+  "lon": -73.961639,
+  "name": "Mount Sinai Morningside"
+ },
+ "ny-1626": {
+  "lat": 40.74432,
+  "lon": -73.885719,
+  "name": "Elmhurst Hospital Center"
+ },
+ "ny-1628": {
+  "lat": 40.755531,
+  "lon": -73.815475,
+  "name": "Flushing Hospital Medical Center"
+ },
+ "ny-1629": {
+  "lat": 40.701412,
+  "lon": -73.816299,
+  "name": "Jamaica Hospital Medical Center"
+ },
+ "ny-1630": {
+  "lat": 40.75467,
+  "lon": -73.70664,
+  "name": "Long Island Jewish Medical Center"
+ },
+ "ny-1633": {
+  "lat": 40.71722,
+  "lon": -73.803581,
+  "name": "Queens Hospital Center"
+ },
+ "ny-1635": {
+  "lat": 40.598637,
+  "lon": -73.752769,
+  "name": "St Johns Episcopal Hospital So Shore"
+ },
+ "ny-1637": {
+  "lat": 40.747517,
+  "lon": -73.826035,
+  "name": "NewYork-Presbyterian/Queens"
+ },
+ "ny-1638": {
+  "lat": 40.728745,
+  "lon": -73.851036,
+  "name": "Long Island Jewish Forest Hills"
+ },
+ "ny-1639": {
+  "lat": 40.768269,
+  "lon": -73.924461,
+  "name": "Mount Sinai Hospital - Mount Sinai Hospital of Queens"
+ },
+ "ny-1692": {
+  "lat": 40.700535,
+  "lon": -73.941711,
+  "name": "Woodhull Medical & Mental Health Center"
+ },
+ "ny-1738": {
+  "lat": 40.635807,
+  "lon": -74.106674,
+  "name": "Richmond University Medical Center"
+ },
+ "ny-1740": {
+  "lat": 40.58453,
+  "lon": -74.08561,
+  "name": "Staten Island University Hosp-North"
+ },
+ "ny-3058": {
+  "lat": 40.849575,
+  "lon": -73.845055,
+  "name": "Montefiore Med Center - Jack D Weiler Hosp of A Einstein College Div"
+ },
+ "ny-3975": {
+  "lat": 40.872475,
+  "lon": -73.912773,
+  "name": "New York-Presbyterian Hospital - Allen Hospital"
+ },
+ "ny-527": {
+  "lat": null,
+  "lon": null,
+  "name": "Mount Sinai South Nassau"
+ },
+ "ny-541": {
+  "lat": 40.77924,
+  "lon": -73.702888,
+  "name": "North Shore University Hospital"
+ },
+ "ny-9700": {
+  "lat": 40.737576,
+  "lon": -74.000488,
+  "name": "Northwell Greenwich Village Hospital"
+ },
+ "ny-9753": {
+  "lat": 40.69093,
+  "lon": -73.99751,
+  "name": "NYU Langone Hospital - Joseph S. and Diane H. Steinberg Ambulatory Care Center"
+ }
+}

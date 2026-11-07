@@ -1,0 +1,69 @@
+# Modeling choices for the NYC study.
+#
+# Speeds (mph) used when a road has no usable posted limit in OpenStreetMap.
+# A posted `maxspeed` always wins. Each sensitivity scenario changes only the
+# values it lists; everything else comes from the baseline.
+#
+#   ordinary  residential, unclassified, tertiary, secondary, primary
+#   slow      service, living_street
+#   link      motorway_link, trunk_link, primary_link, secondary_link, tertiary_link
+#
+# "nyc" applies to roads that touch New York City, "outer" to the rest of the
+# routing area (New Jersey within the buffers).
+
+[speeds.baseline]
+nyc_ordinary = 25
+nyc_slow = 10
+outer_ordinary = 25
+outer_slow = 10
+motorway = 50
+trunk = 35
+link = 25
+
+[speeds.outer35]
+outer_ordinary = 35
+
+[speeds.special_slow]
+motorway = 40
+trunk = 25
+link = 15
+
+[speeds.special_fast]
+motorway = 60
+trunk = 50
+link = 35
+
+# Study area. Origins lie in the rectangle (WGS84 lon/lat); roads are taken
+# from the rectangle buffered by each routing buffer, in EPSG:32618 metres.
+[area]
+origin_bbox = [-74.035, 40.690, -73.930, 40.770]
+buffers_m = { primary = 10000, wide = 20000 }
+# NYC borough boundaries with water areas included (NYC DCP). A road counts as
+# inside NYC when its line touches them.
+nyc_boundary = "nyc-borough-boundaries.geojson"
+
+# OpenStreetMap source: Geofabrik extracts, both from the same replication state.
+[osm]
+extracts = ["new-york", "new-jersey"]
+snapshot_utc = "2026-10-24T20:20:51Z"
+
+# Trip origins: grid points (EPSG:32618, anchored at zero) inside origin_bbox,
+# one grid per spacing. data/nyc-sources/origins/ holds each grid's review.
+[origins]
+spacings_m = [500, 250]
+
+# Census 2020 block populations (TIGER/Line TABBLOCK20, New York and New
+# Jersey), used for the population-weighted comparison. Blocks whose internal
+# point lies within margin_deg of origin_bbox are read.
+[census]
+files = ["tl_2020_36_tabblock20.zip", "tl_2020_34_tabblock20.zip"]
+margin_deg = 0.01
+
+# Downloaded files (data/downloads/) and their SHA-256. Sources and URLs are
+# listed in docs/DATA.md.
+[downloads]
+"new-york.osm.pbf" = "e87a18b597a58acc2398f11a1682bef2903a64e83b18c3dd3e12241201f863ad"
+"new-jersey.osm.pbf" = "fdbf2c06421928dfb5374327b84ba063d59fbac10542c46d9e8ad1f0d8bb57c6"
+"tl_2020_36_tabblock20.zip" = "b8fa7fac0cad83c378778fb07f1d2487e27eedb1a5d29e5c59cda70155c3de93"
+"tl_2020_34_tabblock20.zip" = "33e5475f232d0f01c6a6448fb041fc38bd23eee1f8f5f5a2878cfb116690ce88"
+"nyc-borough-boundaries.geojson" = "5c34b9279415538081e5f1e4b6e5c8d3df5e10a2f35f6f7d94fb5c693ddb1bb2"
