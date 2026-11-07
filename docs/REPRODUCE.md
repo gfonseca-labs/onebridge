@@ -121,4 +121,3 @@ suite runs synthetic examples; it does not rebuild the complete NYC study.
 
 Commands may leave partial output directories on failure. Use a fresh output
 path when retrying; do not treat partial output as a completed study.
-

@@ -190,4 +190,3 @@ and report, and the [rebuild procedure](REPRODUCE.md). CI does not run the full
 NYC rebuild. Agreement between implementations verifies algorithm behavior on
 their inputs; it does not independently validate curated source decisions or
 real-world travel times.
-

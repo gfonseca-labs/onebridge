@@ -138,4 +138,3 @@ Code: MIT ([LICENSE](LICENSE)). Data derived from OpenStreetMap, including
 `data/nyc-sources` and every bundle and report built from it, is
 © OpenStreetMap contributors and available under the Open Database License;
 see [NOTICE.md](NOTICE.md) for all sources and their terms.
-

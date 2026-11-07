@@ -37,4 +37,3 @@ tags of the segment's source ways, or an empty list when unnamed. Before,
 they were OSMnx's merged edge attribute, whose list order depended on Python's
 string hashing. Routes, rankings and scores are unchanged; in `evidence.json`
 the labels of 46 closures change format, and the map is titled "NYC study".
-
