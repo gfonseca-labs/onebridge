@@ -271,6 +271,11 @@ def describe_closures(bundle, members, main):
 def complete_records(closure_ids, origin_ids, baseline, affected):
     """One record per (closure, origin); unaffected origins keep their baseline."""
     by_pair = {(r["closure_id"], r["origin_id"]): r for r in affected}
+    if len(by_pair) != len(affected):
+        raise ValueError("duplicate affected closure-origin records")
+    allowed_closures, allowed_origins = set(closure_ids), set(origin_ids)
+    if any(c not in allowed_closures or o not in allowed_origins for c, o in by_pair):
+        raise ValueError("affected record names an unknown closure or origin")
     fields = (
         "closure_id",
         "origin_id",

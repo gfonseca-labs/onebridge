@@ -137,3 +137,10 @@ def test_usable_edge_without_a_speed_rule_fails():
     review = [{"edge": [1, 2, 0], "usable": True, "reasons": []}]
     with pytest.raises(ValueError, match="no speed rule"):
         usable_edges(extract, review, NODES, nyc(), SPEEDS)
+
+
+def test_duplicate_review_decisions_are_rejected():
+    extract = [road(1, 2, "residential")]
+    decision = {"edge": [1, 2, 0], "usable": True, "reasons": []}
+    with pytest.raises(ValueError, match="duplicate review"):
+        usable_edges(extract, [decision, decision], NODES, nyc(), SPEEDS)

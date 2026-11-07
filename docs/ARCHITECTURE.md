@@ -69,6 +69,8 @@ origin count, rather than averaging the two middle values. For the released
 the conventional median of its released route outcomes is 2.5179093751
 minutes, correctly rounded to 2.52 in the README. The summary's
 `median_minutes` field therefore differs from the documented statistic.
+The current source corrects that field using the conventional median; existing
+v0.2.0 archives and tags retain their original bytes.
 The primary turn configuration handles generic unconditional restrictions;
 the sensitivity also includes `restriction:motorcar` and conditional tags.
 It does not evaluate a departure clock or fully support every vehicle-specific

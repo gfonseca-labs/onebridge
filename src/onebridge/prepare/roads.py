@@ -103,6 +103,8 @@ def usable_edges(extract, review, nodes, nyc_boundary, scenarios):
     project = to_utm()
     prepare(nyc_boundary)
     decisions = {tuple(r["edge"]): r for r in review}
+    if len(decisions) != len(review):
+        raise ValueError("an edge has duplicate review decisions")
     rows = []
     for row in extract:
         edge = tuple(row["edge"])

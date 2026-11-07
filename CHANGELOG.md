@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Correct even-count medians in run summaries and reject duplicate road-review
+  decisions and duplicate or unknown affected outcome records.
 - Clarify reproduction, output failure behavior, ranking semantics, map coverage
   and the boundaries of historical validation in public documentation.
 

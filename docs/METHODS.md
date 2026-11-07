@@ -72,6 +72,14 @@ for the city's business-district U-turn ban, which OSM does not map.
 Relations that cannot be represented (missing members or unsupported shapes)
 are counted in the run output.
 
+That count covers recognized active restrictions only. Vehicle-specific tags
+are not comprehensively supported: the primary configuration reads generic
+unconditional `restriction` values, while `restriction:motorcar` is included
+with conditional rules in the sensitivity. The sensitivity activates those
+rules without evaluating a departure clock. Ignored tag families are not
+included in the unrepresented count. This is a limitation of v0.2.0, not a
+complete interpretation of every OSM car restriction.
+
 ## Origins
 
 Candidate origins are UTM 18N grid points at 500 m (primary) and 250 m
