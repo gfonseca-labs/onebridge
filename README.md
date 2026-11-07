@@ -24,7 +24,7 @@ across those origins are:
 | 10-12 | Queens-Midtown Tunnel and its two Long Island Expressway approaches | 6.59 |
 | 14-15 | Ashland Place, Brooklyn (two segments) | 4.15 |
 
-![Study map: the 18 EDs, the 96 origins and the top-10 closures in red](docs/images/nyc-map.png)
+![Study map: 13 ED destinations used by primary baseline or closure routes, 96 origins and the top-10 closures in red](docs/images/nyc-map.png)
 
 Single closures add little in this dense, ED-rich area: under six seconds per
 origin on average for the leading closure. On the 250 m grid the
@@ -32,17 +32,24 @@ Queens-Midtown Tunnel group leads (20.17 minutes over 350 reachable origins).
 See [docs/RESULTS.md](docs/RESULTS.md) for the full results, sensitivities and
 limitations. The complete report (ranking, route outcomes, sensitivity
 comparison, evidence and map) is attached to the v0.2.0 release as
-`onebridge-nyc-report-0.2.0.tar.gz`.
+[`onebridge-nyc-report-0.2.0.tar.gz`](https://github.com/gfonseca-labs/onebridge/releases/tag/v0.2.0).
+
+The ranking sums added time for origins that remain reachable. Complete loss
+of ED access is counted separately and never increases a closure's score:
+36 main-ranking scenarios disconnect one origin each. Endpoint-road closures
+are listed separately. This is a delay ranking, not an overall emergency-risk ranking.
 
 This is a research model of road travel time to a public road approach at
 each ED. It is not ambulance response time, live traffic, door-to-treatment
 time or clinical advice.
 
-## Try it in a few seconds
+## Try the synthetic demo
 
 ```sh
-git clone https://github.com/gfonseca-labs/onebridge && cd onebridge
-python -m venv .venv
+git clone https://github.com/gfonseca-labs/onebridge.git
+cd onebridge
+git checkout v0.2.0
+python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -e '.[report]'
 onebridge demo --out out/demo
@@ -50,15 +57,18 @@ onebridge demo --out out/demo
 
 `demo` runs the whole study (every configuration, the sensitivity comparison
 and the evidence report) on a tiny invented street grid with one hospital,
-with no downloads. Open `out/demo/report/evidence/ranking.csv` and `map.png`
+with no source-data downloads. Installation still needs package dependencies.
+Open `out/demo/report/evidence/ranking.csv` and `map.png`
 to see what a report looks like.
 
 ## Install
 
-Python 3.11 or newer.
+Python 3.11 or newer. CI tests Linux and macOS with Python 3.11 and 3.13.
+The complete NYC rebuild was checked on macOS with Python 3.13; Windows
+support has not been established. Run the following from the checkout:
 
 ```sh
-python -m venv .venv
+python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -e '.[prepare,report,test]'
 python -m pytest
@@ -91,7 +101,11 @@ onebridge report --bundle data/nyc-bundle --run out/runs --out out/report
   directory (`ranking.csv`, `route_outcomes.jsonl`, `endpoint_convention.csv`,
   `evidence.json`, `map.png`).
 
-Every command writes to a new directory and refuses to overwrite.
+Use a new output directory for each command. Failed commands can leave
+partial directories; inspect them and rerun with a fresh output path.
+Expected success returns exit code 0; invalid arguments return 2. Other
+errors return nonzero and may include a Python traceback. See
+[architecture and failure behavior](docs/ARCHITECTURE.md).
 `python scripts/download.py` fetches and checks the Census and NYC files;
 [docs/DATA.md](docs/DATA.md) lists every download and
 [docs/REPRODUCE.md](docs/REPRODUCE.md) walks through a full rebuild.
@@ -109,9 +123,19 @@ src/onebridge/study/   run matrix, scenarios, comparison and report
 tests/
 ```
 
+## Documentation
+
+- [Methods and assumptions](docs/METHODS.md)
+- [Results and sensitivities](docs/RESULTS.md)
+- [Data sources and review tables](docs/DATA.md)
+- [Full reproduction](docs/REPRODUCE.md)
+- [Architecture and failure behavior](docs/ARCHITECTURE.md)
+- [Changelog](CHANGELOG.md)
+
 ## Licence
 
 Code: MIT ([LICENSE](LICENSE)). Data derived from OpenStreetMap, including
 `data/nyc-sources` and every bundle and report built from it, is
 © OpenStreetMap contributors and available under the Open Database License;
 see [NOTICE.md](NOTICE.md) for all sources and their terms.
+

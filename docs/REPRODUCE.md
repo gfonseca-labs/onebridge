@@ -14,8 +14,10 @@ needs about 4 GB of memory and 11 minutes:
 ## 1. Install
 
 ```sh
-git clone <repository> onebridge && cd onebridge
-python -m venv .venv
+git clone https://github.com/gfonseca-labs/onebridge.git
+cd onebridge
+git checkout v0.2.0
+python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -e '.[prepare,report,test]'
 python -m pytest
@@ -44,16 +46,20 @@ onebridge extract --config config/nyc.toml --downloads data/downloads --out data
 ```
 
 Without them, use the extraction attached to the v0.2.0 release
-([DATA.md](DATA.md#extraction-of-the-2026-10-24-snapshot)):
+([release assets](https://github.com/gfonseca-labs/onebridge/releases/tag/v0.2.0);
+[asset details](DATA.md#extraction-of-the-2026-10-24-snapshot)). Download the
+extraction archive into the repository root, then verify it before unpacking:
 
 ```sh
-shasum -a 256 onebridge-nyc-extract-2026-10-24.tar.gz   # 7b7e5b6c...35b11e6
+printf '%s  %s\n' 7b7e5b6cf70677e38d5475b285ec3ff70e0458aef2028e82f2565956535b11e6 onebridge-nyc-extract-2026-10-24.tar.gz | shasum -a 256 -c -
 tar xzf onebridge-nyc-extract-2026-10-24.tar.gz -C data
 (cd data/nyc-extract && shasum -a 256 -c SHA256SUMS)
 ```
 
-Either way `data/nyc-extract` is byte-identical, and steps 4 and 5 need only
-the Census and NYC files from `data/downloads`.
+The release extraction preserves the pinned snapshot. Rebuilding it from
+PBFs also depends on the software environment; OSMnx is pinned, but the full
+dependency set is not. Steps 4 and 5 need only the Census and NYC files from
+`data/downloads`. On Linux, `sha256sum` can replace `shasum -a 256`.
 
 This writes `roads/primary-extract.jsonl.gz` and `roads/wide-extract.jsonl.gz`
 (175,693 and 476,400 directed edges), plus `osm/ways.json.gz`,
@@ -73,8 +79,9 @@ The log should report:
 - wide: 438,921 usable edges, 257,090 ordinary, 6,275 structure and 21
   crossing candidates.
 
-`prepare` writes sorted keys and gzip headers without timestamps, so the same
-inputs give a byte-identical bundle.
+`prepare` writes sorted keys and gzip headers without timestamps. These
+remove serialization variability; byte equality also depends on using the
+same inputs and compatible software and numerical libraries.
 
 ## 5. Run and report
 
@@ -91,9 +98,27 @@ onebridge report --bundle data/nyc-bundle --run out/runs --out out/report
 - `route_outcomes.jsonl`, `evidence.json` and `map.png`.
 
 `out/report/comparison.json` compares every sensitivity with the primary run.
-With the same dependency versions, `ranking.csv`, `route_outcomes.jsonl`,
-`endpoint_convention.csv` and `map.png` are byte-identical across rebuilds.
-`evidence.json` differs only in its run ID, start time, and package and Python
-versions.
-A different matplotlib version may change `map.png` without changing the
-data.
+The release preparation reported matching `ranking.csv`,
+`route_outcomes.jsonl`, `endpoint_convention.csv` and `map.png` across rebuilds.
+This is a measured result, not a guarantee across every supported environment.
+`evidence.json` includes a fresh run ID, start time, and package and Python
+versions. A different matplotlib version can change the image without changing
+the numerical data.
+
+The repository does not provide a complete lock of the release environment.
+Record your environment alongside any reproduction:
+
+```sh
+python --version
+python -m pip freeze > reproduction-requirements.txt
+```
+
+Compare the rebuilt files with the report asset, whose SHA-256 is
+`97955fdfbd5eaa2ed0190867342de538d1c3dd40f12f6a8ba9ab39b824804c2b`.
+The report archive unpacks to `nyc-report/`; verify its `SHA256SUMS` from
+inside that directory. Different evidence timestamps are expected. The CI
+suite runs synthetic examples; it does not rebuild the complete NYC study.
+
+Commands may leave partial output directories on failure. Use a fresh output
+path when retrying; do not treat partial output as a completed study.
+
