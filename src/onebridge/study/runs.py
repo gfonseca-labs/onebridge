@@ -117,7 +117,6 @@ def run_study(bundle, outdir, runs=RUNS, log=print):
         log(run.name, "scenarios", len(ranking))
 
     summary = {
-        "bundle": str(bundle.path),
         "bundle_sha256": bundle_digest(bundle.path),
         "runs": results,
     }

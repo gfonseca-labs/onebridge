@@ -48,12 +48,19 @@ OpenStreetMap:
 | --- | --- |
 | `onebridge-nyc-extract-2026-10-24.tar.gz` (49.9 MB) | `7b7e5b6cf70677e38d5475b285ec3ff70e0458aef2028e82f2565956535b11e6` |
 
-The [v0.2.0 release](https://github.com/gfonseca-labs/onebridge/releases/tag/v0.2.0)
-also carries the study's report,
-`onebridge-nyc-report-0.2.0.tar.gz` (7.6 MB): the evidence directory
+The [v0.2.1 release](https://github.com/gfonseca-labs/onebridge/releases/tag/v0.2.1)
+carries the updated report,
+`onebridge-nyc-report-0.2.1.tar.gz` (7.6 MB): the evidence directory
 (`ranking.csv`, `route_outcomes.jsonl`, `endpoint_convention.csv`,
 `evidence.json`, `map.png`), `comparison.json` and the ranking tables of all
 10 configurations, under the same ODbL terms.
+
+Its SHA-256 is
+`7608bf9f74202fb362eb8b715b87ecf3ea1b57ed04b9fef8add6d0cb6784b99a`.
+The 24 numerical/data files match the original v0.2.0 report byte-for-byte.
+Only evidence run/map metadata and the map image differ. The original release
+and its assets remain historical records; the pinned extraction above is
+reused unchanged.
 
 The extraction archive unpacks to `nyc-extract/`; the report archive unpacks
 to `nyc-report/`. The extraction is packaged with a `SHA256SUMS` list and an ODbL notice.

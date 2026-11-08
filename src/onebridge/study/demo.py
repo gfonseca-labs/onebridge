@@ -44,6 +44,9 @@ def write_bundle(root):
     """Write the demo bundle to a new directory ``root`` and open it."""
     root = Path(root)
     root.mkdir(parents=True, exist_ok=False)
+    (root / "study.json").write_text(
+        json.dumps({"kind": "synthetic"}, sort_keys=True) + "\n"
+    )
     write_json(root / "nodes.json.gz", {str(n): list(p) for n, p in NODES.items()})
     write_json(root / "ways.json.gz", {str(w): list(e) for w, e in STREETS.items()})
     write_lines(
@@ -142,10 +145,12 @@ def write_bundle(root):
     (root / "map.json").write_text(
         json.dumps(
             {
-                "title": "OneBridge demo: synthetic 3 x 2 street grid (red: the closure "
-                "that adds the most time)",
+                "title": "OneBridge demo: synthetic 3 x 2 street grid\n"
+                "Ranked closures in red; invented data, not a NYC finding",
                 "credit": "Invented demo data; not a study result.",
                 "margin_m": 150,
+                "origin_label": "Synthetic origins",
+                "hospital_heading": "Synthetic hospital",
             }
         )
     )

@@ -1,11 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 — 2026-11-08
 
 - Correct even-count medians in run summaries and reject duplicate road-review
   decisions and duplicate or unknown affected outcome records.
 - Clarify reproduction, output failure behavior, ranking semantics, map coverage
   and the boundaries of historical validation in public documentation.
+- Label synthetic evidence with its actual invented network, origins, travel
+  times and limitations; remove local bundle paths from run summaries.
+- Show complete hospital names in a numbered map key and remove excess margin.
+- Add publication-content checks and normalized source-archive builds to CI.
 
 ## [0.2.0](https://github.com/gfonseca-labs/onebridge/releases/tag/v0.2.0) — 2026-11-07
 

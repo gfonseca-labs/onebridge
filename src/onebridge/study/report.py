@@ -15,6 +15,7 @@ import hashlib
 import json
 import re
 import tempfile
+import textwrap
 from datetime import datetime
 from pathlib import Path
 
@@ -45,7 +46,7 @@ ENDPOINT_COLUMNS = (
     "baseline_reachable_origins",
 )
 SECTIONS = {"schema_version", "run", "inputs", "methodology", "closures", "validation"}
-CONFIGURATION = {
+NYC_CONFIGURATION = {
     "buffer_m": 10000,
     "grid_m": 500,
     "speeds": "baseline",
@@ -53,7 +54,7 @@ CONFIGURATION = {
     "endpoint_options": "campus_frontage_and_reverse_departures",
     "closure_scope": "route_screened",
 }
-LIMITATIONS = [
+NYC_LIMITATIONS = [
     "Modeled road travel to a public road approach at each emergency department; "
     "not door-to-treatment, ambulance response or clinical arrival time.",
     "Static research speeds; no live traffic, signals or emergency-vehicle privileges.",
@@ -73,6 +74,36 @@ LIMITATIONS = [
     "Meadowlands Parkway depends on the excluded Hoboken hospital and on New Jersey "
     "speed assumptions.",
 ]
+
+
+def report_context(bundle):
+    """Keep invented demonstrations separate from the NYC research model."""
+    study = bundle.study()
+    if study["kind"] == "synthetic":
+        return {
+            "dataset": "synthetic-demo",
+            "configuration": {
+                "network": "invented_3_by_2_street_grid",
+                "origins": "two_fixed_origins_reused_in_each_configuration",
+                "travel_times": "30_seconds_per_street_in_each_direction",
+                "routing": "turn_aware",
+                "closure_scope": "route_screened",
+            },
+            "limitations": [
+                "Invented roads, origins and hospital; no real access or NYC finding.",
+                "The configuration names exercise the study pipeline; the demo does "
+                "not construct 500 m or 250 m origin grids or geographic buffers.",
+                "All speed configurations reuse the same synthetic travel times.",
+                "The population-weighted comparison uses invented weights.",
+            ],
+        }
+    configuration = dict(NYC_CONFIGURATION)
+    configuration["buffer_m"] = study["buffers_m"]["primary"]
+    return {
+        "dataset": "nyc",
+        "configuration": configuration,
+        "limitations": NYC_LIMITATIONS,
+    }
 
 
 def build_report(bundle, run_dir, out, log=print):
@@ -104,6 +135,13 @@ def build_report(bundle, run_dir, out, log=print):
 
     population = bundle.origins()["population_2020"]["500"]
     comparison = compare_runs(run_dir, tables, population)
+    if bundle.study()["kind"] == "synthetic":
+        for name, result in comparison.items():
+            result["label"] = (
+                "Invented population weights"
+                if name == "census-weighted"
+                else f"Synthetic configuration: {name}"
+            )
     (out / "comparison.json").write_text(json.dumps(comparison, indent=2) + "\n")
     published = build_evidence(
         bundle, run_dir, tables, members["primary"], comparison, out / "evidence"
@@ -147,14 +185,15 @@ def build_evidence(bundle, run_dir, tables, members, comparison, destination):
     closures, geometry = describe_closures(bundle, members, main)
     hospitals = bundle.hospitals()
     origin_xy = bundle.origins()["coordinates"]["500"]
+    context = report_context(bundle)
     inputs = {
-        "dataset": "nyc",
+        "dataset": context["dataset"],
         "origins": {
             o: {"latitude": origin_xy[o][1], "longitude": origin_xy[o][0]}
             for o in sorted(baseline)
         },
         "hospitals": {h: hospitals[h]["name"] for h in hospital_ids},
-        "configuration": CONFIGURATION,
+        "configuration": context["configuration"],
     }
     project = to_utm()
     with tempfile.TemporaryDirectory(prefix="onebridge-map-") as tmp:
@@ -197,7 +236,7 @@ def build_evidence(bundle, run_dir, tables, members, comparison, destination):
             "sensitivity_triggers": {
                 name: r["triggers"] for name, r in comparison.items() if "triggers" in r
             },
-            "limitations": LIMITATIONS,
+            "limitations": context["limitations"],
         },
         "closures": closures,
         "validation": {
@@ -362,6 +401,8 @@ MAP_LABELS = {
     "not field-verified",
     "credit": "Map data: OpenStreetMap contributors (ODbL), 2026-10-24 snapshot.",
     "margin_m": 1500,
+    "origin_label": "Retained origins (500 m)",
+    "hospital_heading": "Selected emergency departments",
 }
 
 
@@ -377,6 +418,8 @@ def draw_map(path, bundle, top_geometry, hospitals_xy, origins_xy):
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.collections import LineCollection
+    from matplotlib.font_manager import FontProperties
+    from matplotlib.transforms import Bbox
 
     project = to_utm()
     points = [xy for lines in top_geometry for coords in lines for xy in coords]
@@ -389,26 +432,80 @@ def draw_map(path, bundle, top_geometry, hospitals_xy, origins_xy):
         coords = [project(*c) for c in from_wkt(row["geometry"]).coords]
         if any(x0 <= x <= x1 and y0 <= y <= y1 for x, y in coords):
             roads.append(coords)
-    fig, ax = plt.subplots(figsize=(10, 9), dpi=150)
+    fig = plt.figure(figsize=(12, 8), dpi=150, layout="constrained")
+    grid = fig.add_gridspec(1, 2, width_ratios=(3, 1.25))
+    ax = fig.add_subplot(grid[0, 0])
+    key = fig.add_subplot(grid[0, 1])
+    key.set_axis_off()
     ax.add_collection(LineCollection(roads, colors="#c8c8c8", linewidths=0.3))
     top = [coords for lines in top_geometry for coords in lines]
     ax.add_collection(LineCollection(top, colors="#c0392b", linewidths=2.6))
     ox, oy = zip(*origins_xy, strict=True)
-    ax.scatter(ox, oy, s=6, c="#2c7fb8", label="Retained origins (500 m)")
-    for x, y, name in hospitals_xy.values():
-        ax.scatter([x], [y], marker="P", s=60, c="black")
-        ax.annotate(
-            name[:28], (x, y), fontsize=5.5, xytext=(3, 3), textcoords="offset points"
+    ax.scatter(ox, oy, s=6, c="#2c7fb8", label=labels["origin_label"])
+    names = []
+    for number, hospital in enumerate(sorted(hospitals_xy), 1):
+        x, y, name = hospitals_xy[hospital]
+        names.append(
+            textwrap.fill(f"{number}. {name}", width=35, subsequent_indent="   ")
         )
+        ax.scatter([x], [y], marker="P", s=60, c="black")
+    key.set_title(labels["hospital_heading"], loc="left", fontsize=9)
+    key.text(
+        0, 0.98, "\n\n".join(names), va="top", fontsize=7.5, transform=key.transAxes
+    )
     ax.set_xlim(x0, x1)
     ax.set_ylim(y0, y1)
     ax.set_aspect("equal")
     ax.set_xticks([])
     ax.set_yticks([])
-    ax.set_title(labels["title"], fontsize=8)
+    fig.suptitle(labels["title"], fontsize=10)
     ax.legend(loc="lower right", fontsize=6)
-    fig.text(0.01, 0.01, labels["credit"], fontsize=6)
-    fig.savefig(path, bbox_inches="tight")
+    fig.supxlabel(labels["credit"], fontsize=7)
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    occupied = []
+    offsets = [(4, 4), (4, -12), (-15, 4), (-15, -12)]
+    offsets += [
+        (dx, dy)
+        for radius in (20, 35, 50)
+        for dx, dy in (
+            (radius, radius),
+            (-radius, radius),
+            (radius, -radius),
+            (-radius, -radius),
+        )
+    ]
+    pixel_per_point = fig.dpi / 72
+    for number, hospital in enumerate(sorted(hospitals_xy), 1):
+        x, y, _ = hospitals_xy[hospital]
+        px, py = ax.transData.transform((x, y))
+        width, height, _ = renderer.get_text_width_height_descent(
+            str(number), FontProperties(size=7), False
+        )
+        for dx, dy in offsets:
+            left, bottom = px + dx * pixel_per_point, py + dy * pixel_per_point
+            box = Bbox.from_bounds(left - 2, bottom - 2, width + 4, height + 4)
+            if (
+                ax.bbox.contains(*box.p0)
+                and ax.bbox.contains(*box.p1)
+                and not any(box.overlaps(other) for other in occupied)
+            ):
+                break
+        else:
+            raise ValueError("cannot place hospital map labels without overlap")
+        occupied.append(box)
+        label = ax.annotate(
+            str(number),
+            (x, y),
+            fontsize=7,
+            xytext=(dx, dy),
+            textcoords="offset points",
+            ha="left",
+            va="bottom",
+            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.8, "pad": 0.4},
+        )
+        label.set_in_layout(False)
+    fig.savefig(path, bbox_inches="tight", metadata={"Software": "OneBridge"})
     plt.close(fig)
 
 
