@@ -131,4 +131,15 @@ def prepare_bundle(config_path, extract, sources, downloads, out, log=print):
     (out / "hospitals.json").write_text(
         json.dumps(hospital_locations(registry, outlines), sort_keys=True)
     )
+    (out / "study.json").write_text(
+        json.dumps(
+            {
+                "kind": "nyc",
+                "buffers_m": config["area"]["buffers_m"],
+                "spacings_m": config["origins"]["spacings_m"],
+            },
+            sort_keys=True,
+        )
+        + "\n"
+    )
     log("bundle written to", out)

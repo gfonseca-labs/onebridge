@@ -31,8 +31,8 @@ origin on average for the leading closure. On the 250 m grid the
 Queens-Midtown Tunnel group leads (20.17 minutes over 350 reachable origins).
 See [docs/RESULTS.md](docs/RESULTS.md) for the full results, sensitivities and
 limitations. The complete report (ranking, route outcomes, sensitivity
-comparison, evidence and map) is attached to the v0.2.0 release as
-[`onebridge-nyc-report-0.2.0.tar.gz`](https://github.com/gfonseca-labs/onebridge/releases/tag/v0.2.0).
+comparison, evidence and map) is attached to the v0.2.1 release as
+[`onebridge-nyc-report-0.2.1.tar.gz`](https://github.com/gfonseca-labs/onebridge/releases/tag/v0.2.1).
 
 The ranking sums added time for origins that remain reachable. Complete loss
 of ED access is counted separately and never increases a closure's score:
@@ -48,7 +48,7 @@ time or clinical advice.
 ```sh
 git clone https://github.com/gfonseca-labs/onebridge.git
 cd onebridge
-git checkout v0.2.0
+git checkout v0.2.1
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -e '.[report]'

@@ -22,3 +22,4 @@ out/
 .idea/
 .env
 .env.*
+release-check/

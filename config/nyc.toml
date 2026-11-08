@@ -1,8 +1,8 @@
 # Modeling choices for the NYC study.
 #
 # Speeds (mph) used when a road has no usable posted limit in OpenStreetMap.
-# A posted `maxspeed` always wins. Each sensitivity scenario changes only the
-# values it lists; everything else comes from the baseline.
+# A reviewed exception wins, then a usable posted `maxspeed`.
+# Each sensitivity changes only its listed values; the rest use the baseline.
 #
 #   ordinary  residential, unclassified, tertiary, secondary, primary
 #   slow      service, living_street

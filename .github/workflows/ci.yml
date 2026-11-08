@@ -28,4 +28,6 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
       - run: python -m pytest -q
-      - run: python -m build
+      - run: python tools/check_publication.py
+      - run: python tools/build_release.py release-check
+      - run: python tools/check_publication.py release-check/*.whl release-check/*.tar.gz

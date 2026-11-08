@@ -1,8 +1,14 @@
 # Reproducing the NYC study
 
-The test suite runs on Linux and macOS with Python 3.11 and 3.13. The full
-rebuild below was checked from a fresh clone on macOS with Python 3.13. It
-needs about 4 GB of memory and 11 minutes:
+The test suite runs on Linux and macOS with Python 3.11 and 3.13.
+Version 0.2.1's prepare, run and report stages were checked on macOS with
+Python 3.12 using the public frozen extraction and hash-checked downloads.
+All 24 numerical/data report files match v0.2.0; the map and evidence
+run/map metadata changed.
+
+The original v0.2.0 full rebuild was checked on macOS with Python 3.13.
+Its recorded timings below are a historical reference, not a performance
+guarantee for another environment:
 
 | Step | Time | Peak memory |
 | --- | ---: | ---: |
@@ -16,7 +22,7 @@ needs about 4 GB of memory and 11 minutes:
 ```sh
 git clone https://github.com/gfonseca-labs/onebridge.git
 cd onebridge
-git checkout v0.2.0
+git checkout v0.2.1
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -e '.[prepare,report,test]'
@@ -114,8 +120,8 @@ python -m pip freeze > reproduction-requirements.txt
 ```
 
 Compare the rebuilt files with the report asset, whose SHA-256 is
-`97955fdfbd5eaa2ed0190867342de538d1c3dd40f12f6a8ba9ab39b824804c2b`.
-The report archive unpacks to `nyc-report/`; verify its `SHA256SUMS` from
+`7608bf9f74202fb362eb8b715b87ecf3ea1b57ed04b9fef8add6d0cb6784b99a`.
+The 0.2.1 report archive unpacks to `nyc-report/`; verify its `SHA256SUMS` from
 inside that directory. Different evidence timestamps are expected. The CI
 suite runs synthetic examples; it does not rebuild the complete NYC study.
 

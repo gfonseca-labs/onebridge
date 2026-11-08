@@ -33,9 +33,11 @@ origin review tables are curated inputs, not independently verified facts.
 Use trusted input directories and inspect third-party archives before unpacking.
 
 The default study is configured for NYC and the Hudson waterfront. The
-synthetic demo exercises the pipeline; some evidence configuration labels and
-limitations are inherited from the NYC report code. It is not evidence about
-NYC or a general-purpose arbitrary-city product.
+synthetic demo exercises the pipeline with its own dataset label,
+configuration and limitations. Its two fixed origins and invented travel
+times are reused across the named configurations; they are not geographic
+sampling or speed-sensitivity findings. It is not evidence about NYC or a
+general-purpose arbitrary-city product.
 
 Only finite added delay enters the main ranking. Disconnections and endpoint
 closures require separate interpretation. See [methods](METHODS.md) and
@@ -71,6 +73,10 @@ minutes, correctly rounded to 2.52 in the README. The summary's
 `median_minutes` field therefore differs from the documented statistic.
 The current source corrects that field using the conventional median; existing
 v0.2.0 archives and tags retain their original bytes.
+
+Version 0.2.1 also removes the local bundle path from run summaries. A content
+hash identifies the bundle without publishing a user's filesystem location.
+
 The primary turn configuration handles generic unconditional restrictions;
 the sensitivity also includes `restriction:motorcar` and conditional tags.
 It does not evaluate a departure clock or fully support every vehicle-specific

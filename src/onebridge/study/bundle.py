@@ -18,6 +18,7 @@ the bundle alone:
     hospitals.json             hospital names and coordinates
     way-names.json.gz          OSM way names
     map.json                   optional map title, credit and margin
+    study.json                 dataset kind and configured buffers/grids
 
 ``<buffer>`` is ``primary`` (10 km routing buffer) or ``wide`` (20 km).
 Edges are ``[u, v, key]`` OSM node pairs; times are in seconds per speed
@@ -121,6 +122,20 @@ class Bundle:
         """Overrides for the report map (``title``, ``credit``, ``margin_m``)."""
         path = self.path / "map.json"
         return json.loads(path.read_text()) if path.exists() else {}
+
+    def study(self):
+        """Study context; older NYC bundles predate study.json."""
+        path = self.path / "study.json"
+        if path.exists():
+            result = json.loads(path.read_text())
+            if result.get("kind") not in {"nyc", "synthetic"}:
+                raise ValueError("unknown study kind")
+            return result
+        return {
+            "kind": "nyc",
+            "buffers_m": {"primary": 10000, "wide": 20000},
+            "spacings_m": [500, 250],
+        }
 
     def basemap(self, buffer):
         """Every mapped road edge with a geometry, for drawing."""
