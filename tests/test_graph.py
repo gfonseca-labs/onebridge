@@ -76,8 +76,10 @@ def test_rejects_unknown_edge_wrong_crs_and_mismatched_geometry():
         attach_points(road(), {"o": {"edge": ("a", "b", 99), "fraction": 0.5}})
     g = road()
     g.graph["crs"] = "EPSG:4326"
-    with pytest.raises(ValueError, match="32618"):
+    with pytest.raises(ValueError, match="projected metric CRS"):
         attach_points(g, {})
+    g.graph["crs"] = "EPSG:32619"  # another UTM zone is fine
+    attach_points(g, {"o": {"edge": ("a", "b", 0), "fraction": 0.5}})
     g = road()
     g.edges["a", "b", 0]["geometry"] = LineString([(0, 20), (100, 20)])
     with pytest.raises(ValueError, match="endpoints"):

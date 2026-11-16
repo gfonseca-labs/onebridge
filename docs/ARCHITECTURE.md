@@ -36,8 +36,13 @@ The default study is configured for NYC and the Hudson waterfront. The
 synthetic demo exercises the pipeline with its own dataset label,
 configuration and limitations. Its two fixed origins and invented travel
 times are reused across the named configurations; they are not geographic
-sampling or speed-sensitivity findings. It is not evidence about NYC or a
-general-purpose arbitrary-city product.
+sampling or speed-sensitivity findings. It is not evidence about NYC.
+
+A place study (`onebridge init` / `place`, `prepare/place.py`) builds a
+bundle for any area from OpenStreetMap with default rules instead of review
+tables. Its bundle names its UTM zone and has kind `place`. `run` and
+`report` then skip the two NYC-only configurations and label the evidence
+as automatic and unreviewed. See [places](PLACES.md).
 
 Only finite added delay enters the main ranking. Disconnections and endpoint
 closures require separate interpretation. See [methods](METHODS.md) and

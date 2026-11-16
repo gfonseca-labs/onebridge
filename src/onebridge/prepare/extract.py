@@ -54,14 +54,17 @@ EXTRA_WAY_TAGS = {
 _RULE = re.compile(r'\["([^"\]]+)"(?:(?!\])(!~)"([^"\]]*)")?\]')
 
 
-def routing_polygon(origin_bbox, buffer_m):
-    """The origin rectangle buffered by ``buffer_m`` metres, in lon/lat."""
+def routing_polygon(origin_bbox, buffer_m, epsg=32618):
+    """The origin rectangle buffered by ``buffer_m`` metres, in lon/lat.
+
+    The buffer is drawn in the study's UTM zone (18N for NYC).
+    """
     from pyproj import Transformer
     from shapely import transform
     from shapely.geometry import box
 
-    project = Transformer.from_crs(4326, 32618, always_xy=True).transform
-    unproject = Transformer.from_crs(32618, 4326, always_xy=True).transform
+    project = Transformer.from_crs(4326, epsg, always_xy=True).transform
+    unproject = Transformer.from_crs(epsg, 4326, always_xy=True).transform
     projected = transform(box(*origin_bbox), project, interleaved=False)
     return transform(
         projected.buffer(buffer_m, quad_segs=16), unproject, interleaved=False
@@ -305,12 +308,13 @@ def extract_roads(config, downloads, out, log=print):
         fetched(downloads, f"{n}.osm.pbf", config) for n in config["osm"]["extracts"]
     ]
     bbox, buffers = config["area"]["origin_bbox"], config["area"]["buffers_m"]
-    _, footprint = query_polygon(routing_polygon(bbox, max(buffers.values())))
+    epsg = config["area"].get("epsg", 32618)
+    _, footprint = query_polygon(routing_polygon(bbox, max(buffers.values()), epsg))
     elements, restrictions = read_osm(paths, footprint)
     log("read", len(elements), "elements and", len(restrictions), "restrictions")
     way_ids = set()
     for buffer, metres in buffers.items():
-        rows = edge_rows(build_graph(elements, routing_polygon(bbox, metres)))
+        rows = edge_rows(build_graph(elements, routing_polygon(bbox, metres, epsg)))
         write_lines(out / "roads" / f"{buffer}-extract.jsonl.gz", rows)
         way_ids.update(w for row in rows for w in row["ways"])
         log(buffer, len(rows), "edges")

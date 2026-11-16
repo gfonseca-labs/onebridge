@@ -1,8 +1,8 @@
 """Trip origins: a regular grid, a review table, and where each origin joins
 the road network.
 
-Candidate origins are the points of a square grid in UTM zone 18N metres
-(EPSG:32618, anchored at zero) that fall inside the study rectangle. Each
+Candidate origins are the points of a square grid in UTM metres (zone 18N,
+EPSG:32618, for NYC; anchored at zero) that fall inside the study rectangle. Each
 spacing has a review table that marks every candidate as
 
 * ``clear``: the point's surroundings in OpenStreetMap raise no concern;
@@ -33,29 +33,38 @@ from pathlib import Path
 from shapely import STRtree, from_wkt, transform
 from shapely.geometry import LineString, Point
 
-from ..study.bundle import to_utm
+from ..study.bundle import NYC_EPSG, from_utm, to_utm
 
 STATUSES = ("clear", "building_context", "held")
 
 
-def candidate_grid(bbox, spacing):
+def zone_label(epsg):
+    """Short UTM zone label for origin IDs: ``utm18n`` for EPSG:32618."""
+    if not (32601 <= epsg <= 32660 or 32701 <= epsg <= 32760):
+        raise ValueError(f"EPSG:{epsg} is not a WGS84 UTM zone")
+    return f"utm{epsg % 100}{'n' if epsg < 32700 else 's'}"
+
+
+def candidate_grid(bbox, spacing, epsg=NYC_EPSG):
     """Grid points inside ``bbox`` as ``{origin_id: (easting, northing, lon, lat)}``.
 
     Ordered by origin ID.
     """
-    from pyproj import Transformer
     from shapely.geometry import box
 
-    unproject = Transformer.from_crs(32618, 4326, always_xy=True).transform
+    unproject = from_utm(epsg)
+    label = zone_label(epsg)
     west, south, east, north = bbox
-    xmin, ymin, xmax, ymax = transform(box(*bbox), to_utm(), interleaved=False).bounds
+    xmin, ymin, xmax, ymax = transform(
+        box(*bbox), to_utm(epsg), interleaved=False
+    ).bounds
     points = {}
     for i in range(math.floor(xmin / spacing), math.ceil(xmax / spacing) + 1):
         for j in range(math.floor(ymin / spacing), math.ceil(ymax / spacing) + 1):
             easting, northing = i * spacing, j * spacing
             lon, lat = unproject(easting, northing)
             if west <= lon <= east and south <= lat <= north:
-                points[f"utm18n-{spacing}-{i}-{j}"] = (easting, northing, lon, lat)
+                points[f"{label}-{spacing}-{i}-{j}"] = (easting, northing, lon, lat)
     return dict(sorted(points.items()))
 
 
@@ -76,7 +85,7 @@ def kept_origins(grid, review):
     return [o for s in STATUSES[:2] for o in sorted(o for o in grid if status[o] == s)]
 
 
-def departures(edges, nodes, points):
+def departures(edges, nodes, points, epsg=NYC_EPSG):
     """``[[origin_id, edge, fraction], ...]`` from the nearest usable edge.
 
     ``edges`` are usable edges in routing order; an edge without geometry is
@@ -90,7 +99,7 @@ def departures(edges, nodes, points):
             else LineString([nodes[e["edge"][0]], nodes[e["edge"][1]]])
             for e in edges
         ],
-        to_utm(),
+        to_utm(epsg),
         interleaved=False,
     )
     tree = STRtree(lines)

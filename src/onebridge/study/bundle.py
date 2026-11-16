@@ -18,11 +18,15 @@ the bundle alone:
     hospitals.json             hospital names and coordinates
     way-names.json.gz          OSM way names
     map.json                   optional map title, credit and margin
-    study.json                 dataset kind and configured buffers/grids
+    study.json                 dataset kind, projection and configured buffers/grids
 
 ``<buffer>`` is ``primary`` (10 km routing buffer) or ``wide`` (20 km).
 Edges are ``[u, v, key]`` OSM node pairs; times are in seconds per speed
 scenario.
+
+Distances are measured in a UTM zone. The NYC study uses zone 18N
+(EPSG:32618); a ``place`` bundle names its zone in ``study.json`` (``epsg``).
+A ``place`` bundle has no ``nyc-boundary.geojson``.
 """
 
 from __future__ import annotations
@@ -37,6 +41,8 @@ from shapely.geometry import shape
 
 BUFFERS = ("primary", "wide")
 SPEEDS = ("baseline", "outer35", "special_slow", "special_fast")
+KINDS = ("nyc", "synthetic", "place")
+NYC_EPSG = 32618
 
 
 def _lines(path):
@@ -44,16 +50,33 @@ def _lines(path):
         return [json.loads(line) for line in f]
 
 
-def to_utm():
-    """Projection from WGS84 lon/lat to UTM zone 18N metres (EPSG:32618)."""
-    return Transformer.from_crs(4326, 32618, always_xy=True).transform
+def to_utm(epsg=NYC_EPSG):
+    """Projection from WGS84 lon/lat to UTM metres (default zone 18N)."""
+    return Transformer.from_crs(4326, epsg, always_xy=True).transform
 
 
-def read_boundary(path):
+def from_utm(epsg=NYC_EPSG):
+    """Projection from UTM metres back to WGS84 lon/lat."""
+    return Transformer.from_crs(epsg, 4326, always_xy=True).transform
+
+
+def utm_epsg(lon, lat):
+    """EPSG code of the WGS84 UTM zone containing ``(lon, lat)``.
+
+    Norway and Svalbard's irregular zones are not applied; the standard
+    6-degree zone is accurate enough for a city-scale study anywhere.
+    """
+    if not (-180 <= lon <= 180 and -80 <= lat <= 84):
+        raise ValueError("UTM covers latitudes from 80 S to 84 N")
+    zone = min(int((lon + 180) // 6) + 1, 60)
+    return (32600 if lat >= 0 else 32700) + zone
+
+
+def read_boundary(path, epsg=NYC_EPSG):
     """The union of a GeoJSON file's polygons, in UTM metres."""
     features = json.loads(Path(path).read_text())["features"]
     merged = union_all([shape(f["geometry"]) for f in features])
-    return transform(merged, to_utm(), interleaved=False)
+    return transform(merged, to_utm(epsg), interleaved=False)
 
 
 class Bundle:
@@ -128,14 +151,24 @@ class Bundle:
         path = self.path / "study.json"
         if path.exists():
             result = json.loads(path.read_text())
-            if result.get("kind") not in {"nyc", "synthetic"}:
+            if result.get("kind") not in KINDS:
                 raise ValueError("unknown study kind")
+            if result["kind"] == "place" and not isinstance(result.get("epsg"), int):
+                raise ValueError("a place bundle must name its UTM zone (epsg)")
             return result
         return {
             "kind": "nyc",
             "buffers_m": {"primary": 10000, "wide": 20000},
             "spacings_m": [500, 250],
         }
+
+    def epsg(self):
+        """EPSG code of the bundle's metric projection."""
+        return self.study().get("epsg", NYC_EPSG)
+
+    def project(self):
+        """Projection from lon/lat to the bundle's UTM metres."""
+        return to_utm(self.epsg())
 
     def basemap(self, buffer):
         """Every mapped road edge with a geometry, for drawing."""

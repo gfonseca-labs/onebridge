@@ -43,6 +43,22 @@ This is a research model of road travel time to a public road approach at
 each ED. It is not ambulance response time, live traffic, door-to-treatment
 time or clinical advice.
 
+## Study any place
+
+The same analysis runs anywhere OpenStreetMap covers, with documented
+default rules in place of the NYC review tables:
+
+```sh
+python -m pip install -e '.[prepare,report]'
+onebridge place "Newport, Rhode Island" --out data/studies/newport
+```
+
+This downloads the covering OpenStreetMap extracts, finds hospitals that
+OpenStreetMap marks as having an emergency department, and writes the same
+evidence as the NYC study. Results from automatic inputs are a first screen,
+not a reviewed study. See [docs/PLACES.md](docs/PLACES.md) for the rules,
+options and limits.
+
 ## Try the synthetic demo
 
 ```sh
@@ -126,6 +142,7 @@ tests/
 ## Documentation
 
 - [Methods and assumptions](docs/METHODS.md)
+- [Studying any place](docs/PLACES.md)
 - [Results and sensitivities](docs/RESULTS.md)
 - [Data sources and review tables](docs/DATA.md)
 - [Full reproduction](docs/REPRODUCE.md)

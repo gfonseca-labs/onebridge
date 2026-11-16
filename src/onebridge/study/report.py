@@ -32,9 +32,9 @@ from ..evidence import (
     validate_records,
 )
 from ..publish import publish_bytes
-from .bundle import to_utm
 from .compare import PRIMARY, compare_runs
 from .endpoints import endpoint_edges, split_ranking
+from .runs import default_runs
 
 ENDPOINT_COLUMNS = (
     "rank",
@@ -76,9 +76,45 @@ NYC_LIMITATIONS = [
 ]
 
 
+PLACE_LIMITATIONS = [
+    "Modeled road travel to a public road beside each hospital campus; not "
+    "door-to-treatment, ambulance response or clinical arrival time.",
+    "Automatic inputs, not reviewed: every OpenStreetMap drive road without a "
+    "private or no-access tag is usable, and hospitals are those OpenStreetMap "
+    "marks as having an emergency department.",
+    "Arrivals are campus frontage (roads within 20 m of the hospital grounds) and "
+    "mapped emergency entrances; actual ED entrances are not verified.",
+    "Static research speeds: posted limits, else defaults by road class; no live "
+    "traffic, signals or emergency-vehicle privileges.",
+    "OpenStreetMap access and turn restrictions are modeling assumptions, not legal "
+    "or field verification.",
+    "Origins are an equal-weight grid on land near a usable road, not population.",
+    "Hospitals beyond the routing buffer are not destinations, so a closure can look "
+    "worse than it is near the buffer's edge.",
+    "Consecutive segments with identical effects are one corridor effect, not "
+    "independent findings.",
+]
+
+
 def report_context(bundle):
     """Keep invented demonstrations separate from the NYC research model."""
     study = bundle.study()
+    if study["kind"] == "place":
+        return {
+            "dataset": "place",
+            "configuration": {
+                "place": study["name"],
+                "epsg": study["epsg"],
+                "buffer_m": study["buffers_m"]["primary"],
+                "grid_m": 500,
+                "speeds": "baseline",
+                "routing": "turn_aware",
+                "inputs": "automatic_openstreetmap_defaults_unreviewed",
+                "endpoint_options": "campus_frontage_entrances_and_reverse_departures",
+                "closure_scope": "route_screened",
+            },
+            "limitations": PLACE_LIMITATIONS,
+        }
     if study["kind"] == "synthetic":
         return {
             "dataset": "synthetic-demo",
@@ -133,8 +169,9 @@ def build_report(bundle, run_dir, out, log=print):
                 _write_lines(tables / f"{name}-endpoint-convention.jsonl", endpoint)
                 log(name, "main", len(main), "endpoint", len(endpoint))
 
-    population = bundle.origins()["population_2020"]["500"]
-    comparison = compare_runs(run_dir, tables, population)
+    population = bundle.origins().get("population_2020", {}).get("500")
+    names = [r.name for r in default_runs(bundle) if r.name != PRIMARY]
+    comparison = compare_runs(run_dir, tables, population, names)
     if bundle.study()["kind"] == "synthetic":
         for name, result in comparison.items():
             result["label"] = (
@@ -195,7 +232,7 @@ def build_evidence(bundle, run_dir, tables, members, comparison, destination):
         "hospitals": {h: hospitals[h]["name"] for h in hospital_ids},
         "configuration": context["configuration"],
     }
-    project = to_utm()
+    project = bundle.project()
     with tempfile.TemporaryDirectory(prefix="onebridge-map-") as tmp:
         image = Path(tmp) / "map.png"
         draw_map(
@@ -267,7 +304,7 @@ def describe_closures(bundle, members, main):
     way_names = bundle.way_names()
     shapes = {tuple(r["edge"]): r["geometry"] for r in bundle.basemap("primary")}
     flags = {r["closure_id"]: r for r in main}
-    project = to_utm()
+    project = bundle.project()
     closures, geometry = {}, {}
     for cid in sorted(flags):
         edges = members[cid]
@@ -421,7 +458,7 @@ def draw_map(path, bundle, top_geometry, hospitals_xy, origins_xy):
     from matplotlib.font_manager import FontProperties
     from matplotlib.transforms import Bbox
 
-    project = to_utm()
+    project = bundle.project()
     points = [xy for lines in top_geometry for coords in lines for xy in coords]
     points += [(x, y) for x, y, _ in hospitals_xy.values()] + list(origins_xy)
     xs, ys = zip(*points, strict=True)

@@ -30,9 +30,22 @@ def main(argv=None):
     prepare = commands.add_parser("prepare", help="build a study bundle")
     prepare.add_argument("--config", required=True, help="study configuration (TOML)")
     prepare.add_argument("--extract", required=True, help="output of `extract`")
-    prepare.add_argument("--sources", required=True, help="review tables and geography")
+    prepare.add_argument(
+        "--sources",
+        help="review tables and geography (NYC); a place study reads its own folder",
+    )
     prepare.add_argument("--downloads", required=True, help="downloaded source files")
     prepare.add_argument("--out", required=True, help="new bundle directory")
+
+    init = commands.add_parser(
+        "init", help="start a study of any place from OpenStreetMap"
+    )
+    _place_arguments(init)
+
+    place = commands.add_parser(
+        "place", help="init, extract, prepare, run and report a place in one go"
+    )
+    _place_arguments(place)
 
     demo = commands.add_parser(
         "demo", help="run the whole study on a tiny synthetic bundle (seconds)"
@@ -59,11 +72,24 @@ def main(argv=None):
         return 0
     if args.command == "prepare":
         from .prepare.pipeline import prepare_bundle
+        from .prepare.place import is_place_config, prepare_place
 
+        if is_place_config(args.config):
+            from pathlib import Path
+
+            study = args.sources or Path(args.config).parent
+            prepare_place(
+                args.config, args.extract, study, args.downloads, args.out, log=_log
+            )
+            return 0
+        if args.sources is None:
+            parser.error("prepare: --sources is required for the NYC study")
         prepare_bundle(
             args.config, args.extract, args.sources, args.downloads, args.out, log=_log
         )
         return 0
+    if args.command in ("init", "place"):
+        return _place(args, full=args.command == "place")
     from .study.bundle import Bundle
 
     if args.command == "run":
@@ -74,6 +100,69 @@ def main(argv=None):
         from .study.report import build_report
 
         build_report(Bundle(args.bundle), args.run, args.out, log=_log)
+    return 0
+
+
+def _place_arguments(command):
+    command.add_argument("name", help='place to study, e.g. "Newport, Rhode Island"')
+    command.add_argument("--out", required=True, help="new study folder")
+    command.add_argument(
+        "--bbox",
+        nargs=4,
+        type=float,
+        metavar=("WEST", "SOUTH", "EAST", "NORTH"),
+        help="study rectangle in degrees, instead of geocoding the name",
+    )
+    command.add_argument(
+        "--pbf",
+        nargs="+",
+        help="local .osm.pbf extract(s), instead of downloading from Geofabrik",
+    )
+    command.add_argument(
+        "--force", action="store_true", help="allow a study rectangle over 60 km"
+    )
+
+
+def _place(args, full):
+    """``init`` (and for ``place``, every later stage) for one place."""
+    import tomllib
+
+    from .prepare.extract import extract_roads
+    from .prepare.place import init_place, prepare_place
+    from .study.bundle import Bundle
+    from .study.report import build_report
+    from .study.runs import run_study
+
+    config = init_place(
+        args.name, args.out, bbox=args.bbox, pbf=args.pbf, force=args.force, log=_log
+    )
+    study = config.parent
+    if not full:
+        _log(
+            "next: review",
+            study / "hospitals.json",
+            "then run `onebridge extract` and `prepare` with",
+            config,
+        )
+        return 0
+    extract_roads(
+        tomllib.loads(config.read_text()),
+        study / "downloads",
+        study / "extract",
+        log=_log,
+    )
+    prepare_place(
+        config,
+        study / "extract",
+        study,
+        study / "downloads",
+        study / "bundle",
+        log=_log,
+    )
+    bundle = Bundle(study / "bundle")
+    run_study(bundle, study / "runs", log=_log)
+    evidence = build_report(bundle, study / "runs", study / "report", log=_log)
+    _log("done; open", evidence / "ranking.csv", "and", evidence / "map.png")
     return 0
 
 

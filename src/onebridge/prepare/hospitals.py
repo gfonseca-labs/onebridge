@@ -31,7 +31,7 @@ from shapely import from_wkt, transform
 from shapely.geometry import LineString, Point, shape
 from shapely.ops import nearest_points
 
-from ..study.bundle import to_utm
+from ..study.bundle import NYC_EPSG, to_utm
 
 BORDER_M = 20.0
 NODE_TOLERANCE_M = 0.01
@@ -41,9 +41,9 @@ PUBLIC_CLASSES = frozenset(
 )
 
 
-def read_campuses(path):
+def read_campuses(path, epsg=NYC_EPSG):
     """``{hospital: polygon}`` in UTM metres from ``campuses.geojson``."""
-    project = to_utm()
+    project = to_utm(epsg)
     features = json.loads(Path(path).read_text())["features"]
     return {
         f["properties"]["hospital"]: transform(
@@ -65,8 +65,8 @@ def on_structure(tags):
 class Roads:
     """Usable public edges near a campus, with their lines in UTM metres."""
 
-    def __init__(self, extract, usable, ways, nodes):
-        self.project = to_utm()
+    def __init__(self, extract, usable, ways, nodes, epsg=NYC_EPSG):
+        self.project = to_utm(epsg)
         self.nodes = nodes
         self.start = {}
         self.rows = []
