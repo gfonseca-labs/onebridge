@@ -16,6 +16,10 @@
 - Place studies run the eight configurations that apply outside NYC (no
   outer-urban 35 mph run and no NYC U-turn ban), and their report carries
   place-specific limitations.
+- Place reports add `disconnections.csv`, listing every main-ranking closure
+  that cuts origins off from every ED, and the map draws those closures in
+  purple with a legend entry. The ranking is unchanged, and NYC and demo
+  reports are byte-identical apart from the run ID.
 
 ## 0.2.1 — 2026-11-08
 

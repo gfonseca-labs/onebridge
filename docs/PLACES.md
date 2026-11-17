@@ -25,7 +25,7 @@ onebridge place "Newport, Rhode Island" --out data/studies/newport
    study, with the default rules below.
 
 The evidence lands in `data/studies/newport/report/evidence/`
-(`ranking.csv`, `map.png`, `evidence.json`).
+(`ranking.csv`, `disconnections.csv`, `map.png`, `evidence.json`).
 
 To check the inputs first, run the stages one at a time:
 
@@ -109,6 +109,21 @@ nearest public road within 60 m.
 **Closures.** Ordinary road segments and bridge or tunnel structures are
 candidates, as in the NYC study. Structures that share a name and a node
 close as one. There are no curated river-crossing corridors.
+
+**Disconnections.** As in the NYC study, the ranking orders closures by
+added minutes, and an origin cut off from every ED adds no minutes. In a
+place study such a closure is often the main finding, so the report also
+writes `disconnections.csv`: every main-ranking closure that leaves at least
+one origin with no route to any ED, with its name, the number of origins cut
+off, the baseline reachable origins and the IDs of the origins cut off, most
+origins first. The map draws these closures as a wide purple band under the
+top-10 red lines, with its own legend entry. The ranking itself does not
+change. Closures of an origin's own departure road or a hospital's arrival
+road stay in `endpoint_convention.csv`, as in the NYC study.
+
+For Newport, closing the Newport (Pell) Bridge cuts 6 Jamestown origins off
+and Fort Adams Drive cuts off 3. Most other rows are short roads that are
+the only way out for one origin.
 
 **Runs.** Eight of the NYC study's ten configurations apply. The
 outer-urban 35 mph run and the NYC U-turn ban are NYC-specific and are not

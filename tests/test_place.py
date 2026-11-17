@@ -1,5 +1,7 @@
 """Studies of any place: projection, default rules and the place bundle path."""
 
+import csv
+import gzip
 import json
 
 import pytest
@@ -7,6 +9,7 @@ from shapely.geometry import Point, box, mapping
 
 from onebridge.cli import main
 from onebridge.prepare.origins import candidate_grid, zone_label
+from onebridge.prepare.output import write_lines
 from onebridge.prepare.place import (
     _config_toml,
     _hospital_row,
@@ -18,8 +21,9 @@ from onebridge.prepare.place import (
     place_seconds,
 )
 from onebridge.prepare.roads import MPH, load_speeds
+from onebridge.study import report
 from onebridge.study.bundle import Bundle, to_utm, utm_epsg
-from onebridge.study.demo import write_bundle
+from onebridge.study.demo import STREETS, write_bundle
 from onebridge.study.report import build_report
 from onebridge.study.runs import PLACE_RUNS, RUNS, default_runs, run_study
 
@@ -255,6 +259,67 @@ def test_place_bundle_runs_and_reports_without_nyc_inputs(tmp_path):
     comparison = json.loads((tmp_path / "report" / "comparison.json").read_text())
     assert "census-weighted" not in comparison
     assert set(comparison) == {r.name for r in PLACE_RUNS} - {"primary-500-baseline"}
+
+
+def without_ways(bundle, dropped):
+    """Remove streets from a bundle's road graph, keeping their names."""
+    for buffer in ("primary", "wide"):
+        for name, key in (
+            ("edges", lambda r: r["ways"][0]),
+            ("basemap", lambda r: STREETS_BY_NODES[frozenset(r["edge"][:2])]),
+            ("ordinary", lambda r: r["ways"][0]),
+        ):
+            path = bundle.path / buffer / f"{name}.jsonl.gz"
+            rows = [json.loads(x) for x in gzip.open(path, "rt")]
+            write_lines(path, [r for r in rows if key(r) not in dropped])
+    return Bundle(bundle.path)
+
+
+STREETS_BY_NODES = {frozenset(e): w for w, e in STREETS.items()}
+
+
+def test_place_report_lists_and_maps_disconnecting_closures(tmp_path, monkeypatch):
+    # Without the 1-4 and 2-5 streets, o-west reaches the hospital only by
+    # 2-3-6. Closing 2-3 cuts it off from every ED; 3-6 ends at the hospital,
+    # so it stays in the endpoint table.
+    bundle = without_ways(place_bundle(tmp_path), {105, 106})
+    drawn = {}
+    original = report.draw_map
+
+    def spy(*args, **kwargs):
+        drawn["args"] = args
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(report, "draw_map", spy)
+    run_study(bundle, tmp_path / "runs", log=quiet)
+    evidence = build_report(bundle, tmp_path / "runs", tmp_path / "report", log=quiet)
+    rows = list(csv.DictReader((evidence / "disconnections.csv").open()))
+    assert rows == [
+        {
+            "closure_id": "segment-102",
+            "names": "Street 102",
+            "newly_disconnected_origins": "1",
+            "baseline_reachable_origins": "2",
+            "disconnected_origin_ids": "o-west",
+        }
+    ]
+    # The ranking itself is unchanged: disconnections never break its ties.
+    ranking = list(csv.DictReader((evidence / "ranking.csv").open()))
+    assert {r["closure_id"] for r in rows} <= {r["closure_id"] for r in ranking}
+    manifest = json.loads((evidence / "evidence.json").read_text())
+    assert "disconnections.csv" in manifest["validation"]
+    assert "disconnection_table" in manifest["methodology"]
+    (segment,) = drawn["args"][5]
+    assert len(segment) == 2  # both directions of the street
+
+
+def test_only_place_reports_carry_a_disconnection_table(tmp_path):
+    bundle = write_bundle(tmp_path / "bundle")
+    run_study(bundle, tmp_path / "runs", log=quiet)
+    evidence = build_report(bundle, tmp_path / "runs", tmp_path / "report", log=quiet)
+    assert not (evidence / "disconnections.csv").exists()
+    manifest = json.loads((evidence / "evidence.json").read_text())
+    assert "disconnections.csv" not in manifest["validation"]
 
 
 def test_prepare_requires_sources_for_nyc(tmp_path, capsys):

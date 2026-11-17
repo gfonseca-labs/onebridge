@@ -6,7 +6,9 @@
 * ``comparison.json``: each sensitivity compared with the primary run;
 * ``evidence/``: ``ranking.csv``, ``route_outcomes.jsonl`` (every closure and
   origin pair), ``endpoint_convention.csv``, ``map.png`` and ``evidence.json``,
-  published atomically after validation.
+  published atomically after validation. Place studies add
+  ``disconnections.csv``: every main-ranking closure that cuts an origin off
+  from every ED, which the map draws in its own style.
 """
 
 from __future__ import annotations
@@ -44,6 +46,13 @@ ENDPOINT_COLUMNS = (
     "finite_comparable_origins",
     "newly_disconnected_origins",
     "baseline_reachable_origins",
+)
+DISCONNECTION_COLUMNS = (
+    "closure_id",
+    "names",
+    "newly_disconnected_origins",
+    "baseline_reachable_origins",
+    "disconnected_origin_ids",
 )
 SECTIONS = {"schema_version", "run", "inputs", "methodology", "closures", "validation"}
 NYC_CONFIGURATION = {
@@ -223,6 +232,11 @@ def build_evidence(bundle, run_dir, tables, members, comparison, destination):
     hospitals = bundle.hospitals()
     origin_xy = bundle.origins()["coordinates"]["500"]
     context = report_context(bundle)
+    disconnections = (
+        disconnection_rows(ranking, records, closures)
+        if context["dataset"] == "place"
+        else None
+    )
     inputs = {
         "dataset": context["dataset"],
         "origins": {
@@ -250,6 +264,9 @@ def build_evidence(bundle, run_dir, tables, members, comparison, destination):
                 project(v["longitude"], v["latitude"])
                 for v in inputs["origins"].values()
             ],
+            None
+            if disconnections is None
+            else [geometry[r["closure_id"]] for r in disconnections],
         )
         map_bytes = image.read_bytes()
 
@@ -286,10 +303,42 @@ def build_evidence(bundle, run_dir, tables, members, comparison, destination):
         "ranking.csv": encoded["ranking.csv"],
         "route_outcomes.jsonl": encoded["route_outcomes.jsonl"],
         "endpoint_convention.csv": endpoint_bytes,
-        "evidence.json": encode_manifest(manifest),
         "map.png": map_bytes,
     }
+    if disconnections is not None:
+        files["disconnections.csv"] = encode_csv(disconnections, DISCONNECTION_COLUMNS)
+        manifest["methodology"]["disconnection_table"] = (
+            "main-ranking closures that leave an origin with no route to any ED, "
+            "most origins first; listed in disconnections.csv and drawn on the map; "
+            "the ranking is unchanged"
+        )
+        manifest["validation"]["disconnections.csv"] = hashlib.sha256(
+            files["disconnections.csv"]
+        ).hexdigest()
+    files["evidence.json"] = encode_manifest(manifest)
     return publish_bytes(destination, files, validator(records, closures, inputs))
+
+
+def disconnection_rows(ranking, records, closures):
+    """Closures that newly disconnect at least one origin, most origins first."""
+    cut_off = {}
+    for record in records:
+        if record["newly_disconnected"]:
+            cut_off.setdefault(record["closure_id"], []).append(record["origin_id"])
+    rows = [
+        {
+            "closure_id": r["closure_id"],
+            "names": " / ".join(closures[r["closure_id"]]["names"]),
+            "newly_disconnected_origins": r["newly_disconnected_origins"],
+            "baseline_reachable_origins": r["baseline_reachable_origins"],
+            "disconnected_origin_ids": " ".join(sorted(cut_off[r["closure_id"]])),
+        }
+        for r in ranking
+        if r["newly_disconnected_origins"]
+    ]
+    return sorted(
+        rows, key=lambda r: (-r["newly_disconnected_origins"], r["closure_id"])
+    )
 
 
 def describe_closures(bundle, members, main):
@@ -416,7 +465,18 @@ def validator(expected_records, expected_closures, expected_inputs):
             or encoded["reference"] != manifest["validation"]["route_outcomes"]
         ):
             raise ValueError("ranking and outcome files do not reconcile")
-        for name in ("map.png", "endpoint_convention.csv"):
+        hashed = ["map.png", "endpoint_convention.csv"]
+        if manifest["inputs"]["dataset"] == "place":
+            hashed.append("disconnections.csv")
+            expected = encode_csv(
+                disconnection_rows(ranking, records, manifest["closures"]),
+                DISCONNECTION_COLUMNS,
+            )
+            if (stage / "disconnections.csv").read_bytes() != expected:
+                raise ValueError("disconnections.csv does not follow from the outcomes")
+        if set(manifest["validation"]) != {"route_outcomes", *hashed}:
+            raise ValueError("unexpected files in the evidence validation section")
+        for name in hashed:
             digest = hashlib.sha256((stage / name).read_bytes()).hexdigest()
             if digest != manifest["validation"][name]:
                 raise ValueError(f"{name} does not match its recorded hash")
@@ -440,14 +500,19 @@ MAP_LABELS = {
     "margin_m": 1500,
     "origin_label": "Retained origins (500 m)",
     "hospital_heading": "Selected emergency departments",
+    "disconnection_label": "Closures that cut origins off from every ED",
 }
 
 
-def draw_map(path, bundle, top_geometry, hospitals_xy, origins_xy):
+def draw_map(
+    path, bundle, top_geometry, hospitals_xy, origins_xy, disconnected_geometry=None
+):
     """Top-10 closures in red over the road network, with origins and EDs.
 
-    Title, credit and margin come from :data:`MAP_LABELS`, overridden by the
-    bundle's optional ``map.json``.
+    ``disconnected_geometry`` (place studies) adds closures that cut origins
+    off from every ED, drawn as a wide purple band under the red lines with
+    its own legend entry. Title, credit and margin come from
+    :data:`MAP_LABELS`, overridden by the bundle's optional ``map.json``.
     """
     labels = MAP_LABELS | bundle.map_labels()
     import matplotlib
@@ -460,6 +525,8 @@ def draw_map(path, bundle, top_geometry, hospitals_xy, origins_xy):
 
     project = bundle.project()
     points = [xy for lines in top_geometry for coords in lines for xy in coords]
+    cut = [coords for lines in disconnected_geometry or () for coords in lines]
+    points += [xy for coords in cut for xy in coords]
     points += [(x, y) for x, y, _ in hospitals_xy.values()] + list(origins_xy)
     xs, ys = zip(*points, strict=True)
     m = labels["margin_m"]
@@ -475,6 +542,16 @@ def draw_map(path, bundle, top_geometry, hospitals_xy, origins_xy):
     key = fig.add_subplot(grid[0, 1])
     key.set_axis_off()
     ax.add_collection(LineCollection(roads, colors="#c8c8c8", linewidths=0.3))
+    if disconnected_geometry is not None:
+        ax.add_collection(
+            LineCollection(
+                cut,
+                colors="#a57cc1",
+                linewidths=5.0,
+                capstyle="round",
+                label=labels["disconnection_label"],
+            )
+        )
     top = [coords for lines in top_geometry for coords in lines]
     ax.add_collection(LineCollection(top, colors="#c0392b", linewidths=2.6))
     ox, oy = zip(*origins_xy, strict=True)
