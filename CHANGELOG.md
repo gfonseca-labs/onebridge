@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-11-17
 
 - Study any place: `onebridge place "<name>" --out <folder>` geocodes the
   name and downloads the covering Geofabrik extracts. It then builds a bundle
@@ -20,6 +20,9 @@
   that cuts origins off from every ED, and the map draws those closures in
   purple with a legend entry. The ranking is unchanged, and NYC and demo
   reports are byte-identical apart from the run ID.
+- NYC results are unchanged. A rebuild of `prepare`, `run` and `report` from
+  the frozen v0.2.0 extraction matches the v0.2.1 report byte for byte,
+  apart from the evidence run metadata, so v0.2.1 keeps the NYC report asset.
 
 ## 0.2.1 — 2026-11-08
 

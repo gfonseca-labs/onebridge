@@ -4,7 +4,9 @@ The test suite runs on Linux and macOS with Python 3.11 and 3.13.
 Version 0.2.1's prepare, run and report stages were checked on macOS with
 Python 3.12 using the public frozen extraction and hash-checked downloads.
 All 24 numerical/data report files match v0.2.0; the map and evidence
-run/map metadata changed.
+run/map metadata changed. Version 0.3.0 was checked the same way on macOS
+with Python 3.13: every report file, the map included, matches v0.2.1
+byte for byte apart from the evidence run ID, start time and Python version.
 
 The original v0.2.0 full rebuild was checked on macOS with Python 3.13.
 Its recorded timings below are a historical reference, not a performance
@@ -22,7 +24,7 @@ guarantee for another environment:
 ```sh
 git clone https://github.com/gfonseca-labs/onebridge.git
 cd onebridge
-git checkout v0.2.1
+git checkout v0.3.0
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -e '.[prepare,report,test]'

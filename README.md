@@ -64,7 +64,7 @@ options and limits.
 ```sh
 git clone https://github.com/gfonseca-labs/onebridge.git
 cd onebridge
-git checkout v0.2.1
+git checkout v0.3.0
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -e '.[report]'
