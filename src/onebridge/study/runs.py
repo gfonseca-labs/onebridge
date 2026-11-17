@@ -61,8 +61,19 @@ RUNS = (
 )
 
 
-def run_study(bundle, outdir, runs=RUNS, log=print):
+# Outside NYC there is no NYC/outer speed split and no NYC U-turn rule to test.
+PLACE_RUNS = tuple(r for r in RUNS if r.speeds != "outer35" and not r.u_turn_ban)
+
+
+def default_runs(bundle):
+    """The configurations a bundle's study kind calls for."""
+    return PLACE_RUNS if bundle.study()["kind"] == "place" else RUNS
+
+
+def run_study(bundle, outdir, runs=None, log=print):
     """Run every configuration and write routes, scenarios and rankings."""
+    if runs is None:
+        runs = default_runs(bundle)
     out = Path(outdir)
     out.mkdir(parents=True, exist_ok=False)
     used = defaultdict(set)

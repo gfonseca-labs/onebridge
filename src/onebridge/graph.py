@@ -12,8 +12,20 @@ from shapely.ops import substring
 
 from .ranking import require_id, require_number
 
-CRS_UTM18N = CRS.from_epsg(32618)
 ENDPOINT_TOLERANCE_M = 0.01
+
+
+def require_metric_crs(value):
+    """Refuse a graph CRS that is not a projected one measured in metres."""
+    try:
+        crs = CRS.from_user_input(value)
+    except Exception as error:
+        raise ValueError("attachment geometry needs a projected metric CRS") from error
+    if not crs.is_projected or any(
+        axis.unit_name not in ("metre", "meter") for axis in crs.axis_info
+    ):
+        raise ValueError("attachment geometry needs a projected metric CRS")
+    return crs
 
 
 def attach_points(graph, requests):
@@ -22,15 +34,14 @@ def attach_points(graph, requests):
     ``requests`` maps an ID to ``{"edge": (u, v, key), "fraction": f}``, where
     ``f`` is measured from ``u`` towards ``v``. Only the named direction is
     split; the reverse carriageway needs its own request. Geometry and node
-    ``x``/``y`` must be in EPSG:32618.
+    ``x``/``y`` must be in the graph's projected CRS, in metres (a UTM zone).
 
     Returns ``(split_graph, attachments, descendants)``: a copy of the graph
     with the edges split, ``{id: node}``, and ``{original_edge: [pieces]}``.
     Each piece carries ``original_edge``; time and length are divided by
     fraction so that the pieces sum exactly to the original edge.
     """
-    if CRS.from_user_input(graph.graph.get("crs")) != CRS_UTM18N:
-        raise ValueError("attachment geometry must be in EPSG:32618")
+    require_metric_crs(graph.graph.get("crs"))
     grouped = defaultdict(list)
     for identity, request in requests.items():
         require_id(identity, "attachment id")

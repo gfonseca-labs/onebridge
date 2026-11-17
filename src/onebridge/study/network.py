@@ -9,7 +9,6 @@ from shapely import from_wkt, transform
 from shapely.geometry import LineString
 
 from ..graph import attach_points
-from .bundle import to_utm
 
 
 @dataclass
@@ -32,7 +31,8 @@ class Network:
 
 
 def road_graph(bundle, buffer, speeds):
-    """Directed road graph in UTM metres with ``travel_time`` and ``length``.
+    """Directed road graph in the bundle's UTM metres with ``travel_time``
+    and ``length``.
 
     Only edges that endpoints attach to carry a geometry; the rest are never
     split and do not need one.
@@ -40,8 +40,8 @@ def road_graph(bundle, buffer, speeds):
     nodes = bundle.nodes()
     endpoints = bundle.endpoints(buffer)
     attached = _attachment_edges(endpoints)
-    project = to_utm()
-    graph = nx.MultiDiGraph(crs="EPSG:32618")
+    project = bundle.project()
+    graph = nx.MultiDiGraph(crs=f"EPSG:{bundle.epsg()}")
     for row in bundle.edges(buffer):
         edge = tuple(row["edge"])
         for n in edge[:2]:

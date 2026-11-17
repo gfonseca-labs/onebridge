@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+- Study any place: `onebridge place "<name>" --out <folder>` geocodes the
+  name and downloads the covering Geofabrik extracts. It then builds a bundle
+  with documented default rules for roads, origins, hospitals and arrivals,
+  and runs the study and report. `onebridge init` does the first step alone,
+  so `hospitals.json` and `config.toml` can be checked first. See
+  [docs/PLACES.md](docs/PLACES.md).
+- `prepare` recognises a place configuration (`[study] kind = "place"`);
+  `--sources` is required only for the NYC study.
+- The projection is a property of the bundle (`study.json` `epsg`, default
+  UTM 18N), so routing, attachment and the map work in any UTM zone. NYC
+  bundles, origin IDs and results are unchanged.
+- Place studies run the eight configurations that apply outside NYC (no
+  outer-urban 35 mph run and no NYC U-turn ban), and their report carries
+  place-specific limitations.
+- Place reports add `disconnections.csv`, listing every main-ranking closure
+  that cuts origins off from every ED, and the map draws those closures in
+  purple with a legend entry. The ranking is unchanged, and NYC and demo
+  reports are byte-identical apart from the run ID.
+
 ## 0.2.1 — 2026-11-08
 
 - Correct even-count medians in run summaries and reject duplicate road-review

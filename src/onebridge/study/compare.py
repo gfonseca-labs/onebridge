@@ -27,19 +27,25 @@ SENSITIVITIES = {
 TRIGGER = 0.05
 
 
-def compare_runs(run_dir, tables_dir, population=None):
+def compare_runs(run_dir, tables_dir, population=None, names=None):
     """Return the comparison report as a dict.
 
     ``tables_dir`` holds the ``*-main-ranking.jsonl`` tables from the endpoint
     split. ``population`` maps 500 m origin IDs to residents; when given, the
-    primary main table is also ranked by population-weighted delay.
+    primary main table is also ranked by population-weighted delay. ``names``
+    limits the comparison to those sensitivity runs (default: all of them);
+    every named run must exist.
     """
     run_dir, tables_dir = Path(run_dir), Path(tables_dir)
+    if names is not None and set(names) - set(SENSITIVITIES):
+        raise ValueError(f"unknown sensitivity runs: {set(names) - set(SENSITIVITIES)}")
     primary = _routes(run_dir, PRIMARY)
     primary_main = _lines(tables_dir / f"{PRIMARY}-main-ranking.jsonl")
     primary_reached = [r for r in primary.values() if r["status"] == "reachable"]
     report = {}
     for name, label in SENSITIVITIES.items():
+        if names is not None and name not in names:
+            continue
         routes = _routes(run_dir, name)
         main = _lines(tables_dir / f"{name}-main-ranking.jsonl")
         same_origins = set(routes) == set(primary)
