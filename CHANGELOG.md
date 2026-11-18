@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 — 2026-11-17
+## 0.3.0 — 2026-11-18
 
 - Study any place: `onebridge place "<name>" --out <folder>` geocodes the
   name and downloads the covering Geofabrik extracts. It then builds a bundle
@@ -20,6 +20,22 @@
   that cuts origins off from every ED, and the map draws those closures in
   purple with a legend entry. The ranking is unchanged, and NYC and demo
   reports are byte-identical apart from the run ID.
+- Closure re-solves use A* guided by each node's open-road time to the
+  nearest hospital, a lower bound no closure can beat. Results are
+  bit-identical; a Pittsburgh study's 19,302 closures run in minutes
+  instead of hours, and the NYC `run` stage takes 2 minutes instead of 6.
+- Place evidence lists only the outcomes a closure changes
+  (`route_outcomes.jsonl`) plus each origin's baseline
+  (`baseline_outcomes.jsonl`), so a city's evidence is megabytes, not
+  gigabytes. The ranking is still recomputed from the records. NYC evidence
+  keeps one record per pair.
+- Place studies include only hospitals tagged `emergency=yes`; untagged ones
+  are listed for review, and assumed only where none in the area is tagged.
+- Place studies size the primary routing buffer (10, 15 or 20 km) to reach
+  two EDs from the whole study rectangle; the wide run adds 10 km.
+- Place studies close a road that only touches a ford or other
+  grade-separated point as an ordinary segment, and `prepare` checks that
+  every usable edge belongs to a closure.
 - NYC results are unchanged. A rebuild of `prepare`, `run` and `report` from
   the frozen v0.2.0 extraction matches the v0.2.1 report byte for byte,
   apart from the evidence run metadata, so v0.2.1 keeps the NYC report asset.

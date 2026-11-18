@@ -67,6 +67,17 @@ def test_ordinary_segments_group_both_directions_and_skip_structures():
     assert again == [segment]
 
 
+def test_place_studies_keep_ways_at_a_ford_node_ordinary():
+    usable = {tuple(r["edge"]) for r in EXTRACT}
+    rows = ordinary_candidates(EXTRACT, usable, WAYS, NODES, separated_nodes=False)
+    by_way = {tuple(r["ways"]): r["edges"] for r in rows}
+    # Way 12 touches the ford node; the bridge way 11 is still a structure.
+    assert (12,) in by_way and (11,) not in by_way
+    structures = structure_candidates(EXTRACT, usable, WAYS, set())
+    closable = {tuple(e) for g in rows + structures for e in g["edges"]}
+    assert closable == usable
+
+
 def test_ordinary_segments_differ_by_source_and_list_every_name():
     extract = [row(1, 2, [10]), row(2, 1, [10, 13])]
     usable = {(1, 2, 0), (2, 1, 0)}

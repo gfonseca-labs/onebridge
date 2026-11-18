@@ -37,18 +37,24 @@ def grade_separated(tags):
     ) or tags.get("layer") not in (None, "0")
 
 
-def ordinary_candidates(extract, usable, ways, nodes):
+def ordinary_candidates(extract, usable, ways, nodes, separated_nodes=True):
     """Ordinary segment candidates, sorted by ID.
 
     ``ways`` maps way IDs to ``{"tags", "nodes"}`` and ``nodes`` node IDs to
-    ``{"tags", "lon", "lat"}``.
+    ``{"tags", "lon", "lat"}``. With ``separated_nodes`` false, a way that
+    only touches a grade-separated node (a ford mapped as a point, say) stays
+    ordinary; place studies have no review table to close it otherwise.
     """
     separated = {i for i, w in ways.items() if grade_separated(w["tags"])}
-    touches = {
-        i
-        for i, w in ways.items()
-        if any(grade_separated(nodes[n]["tags"]) for n in w["nodes"])
-    }
+    touches = (
+        {
+            i
+            for i, w in ways.items()
+            if any(grade_separated(nodes[n]["tags"]) for n in w["nodes"])
+        }
+        if separated_nodes
+        else set()
+    )
     groups = {}
     for row in extract:
         edge = tuple(row["edge"])

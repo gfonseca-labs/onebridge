@@ -27,10 +27,12 @@ from ..evidence import (
     CSV_COLUMNS,
     SCHEMA_VERSION,
     capture_run,
+    encode_changed,
     encode_csv,
     encode_manifest,
     encode_results,
     strict_json,
+    validate_changed,
     validate_records,
 )
 from ..publish import publish_bytes
@@ -210,7 +212,18 @@ def build_evidence(bundle, run_dir, tables, members, comparison, destination):
         for r in _lines(run_dir / f"{PRIMARY}-affected-outcomes.jsonl")
         if r["closure_id"] in in_main
     ]
-    records = complete_records(closure_ids, list(baseline), baseline, affected)
+    context = report_context(bundle)
+    # Place studies can have thousands of closures and origins; they publish
+    # only the outcomes a closure changes (see evidence.validate_changed).
+    changed_only = context["dataset"] == "place"
+    before = {
+        oid: {k: r[k] for k in ("status", "hospital_id", "travel_time_seconds")}
+        for oid, r in baseline.items()
+    }
+    if changed_only:
+        records = changed_records(closure_ids, before, affected)
+    else:
+        records = complete_records(closure_ids, list(baseline), baseline, affected)
     hospital_ids = sorted(
         {r["hospital_id"] for r in baseline.values() if r["hospital_id"]}
         | {
@@ -219,7 +232,12 @@ def build_evidence(bundle, run_dir, tables, members, comparison, destination):
             if r["scenario"]["hospital_id"]
         }
     )
-    ranking = validate_records(records, closure_ids, list(baseline), hospital_ids)
+    if changed_only:
+        ranking = validate_changed(
+            records, before, closure_ids, list(baseline), hospital_ids
+        )
+    else:
+        ranking = validate_records(records, closure_ids, list(baseline), hospital_ids)
     split_rows = {r["closure_id"]: {k: r[k] for k in CSV_COLUMNS} for r in main}
     if any(
         split_rows[r["closure_id"]] != {k: r[k] for k in CSV_COLUMNS} for r in ranking
@@ -231,7 +249,6 @@ def build_evidence(bundle, run_dir, tables, members, comparison, destination):
     closures, geometry = describe_closures(bundle, members, main)
     hospitals = bundle.hospitals()
     origin_xy = bundle.origins()["coordinates"]["500"]
-    context = report_context(bundle)
     disconnections = (
         disconnection_rows(ranking, records, closures)
         if context["dataset"] == "place"
@@ -270,9 +287,14 @@ def build_evidence(bundle, run_dir, tables, members, comparison, destination):
         )
         map_bytes = image.read_bytes()
 
-    encoded = encode_results(
-        ranking, records, closure_ids, list(baseline), hospital_ids
-    )
+    if changed_only:
+        encoded = encode_changed(
+            ranking, records, before, closure_ids, list(baseline), hospital_ids
+        )
+    else:
+        encoded = encode_results(
+            ranking, records, closure_ids, list(baseline), hospital_ids
+        )
     endpoint_bytes = encode_csv(endpoint, ENDPOINT_COLUMNS)
     manifest = {
         "schema_version": SCHEMA_VERSION,
@@ -303,6 +325,11 @@ def build_evidence(bundle, run_dir, tables, members, comparison, destination):
         "ranking.csv": encoded["ranking.csv"],
         "route_outcomes.jsonl": encoded["route_outcomes.jsonl"],
         "endpoint_convention.csv": endpoint_bytes,
+        **(
+            {"baseline_outcomes.jsonl": encoded["baseline_outcomes.jsonl"]}
+            if changed_only
+            else {}
+        ),
         "map.png": map_bytes,
     }
     if disconnections is not None:
@@ -393,6 +420,33 @@ def describe_closures(bundle, members, main):
     return closures, geometry
 
 
+def changed_records(closure_ids, baseline, affected):
+    """Affected records whose outcome differs from the baseline, in order."""
+    allowed = set(closure_ids)
+    fields = (
+        "closure_id",
+        "origin_id",
+        "baseline",
+        "scenario",
+        "finite_added_minutes",
+        "newly_disconnected",
+    )
+    records = {}
+    for r in affected:
+        if r["closure_id"] not in allowed or r["origin_id"] not in baseline:
+            raise ValueError("affected record names an unknown closure or origin")
+        if r["baseline"] != baseline[r["origin_id"]]:
+            raise ValueError(
+                f"baseline of {r['origin_id']} differs in {r['closure_id']}"
+            )
+        key = (r["closure_id"], r["origin_id"])
+        if key in records:
+            raise ValueError("duplicate affected closure-origin records")
+        if r["scenario"] != r["baseline"]:
+            records[key] = {k: r[k] for k in fields}
+    return [records[k] for k in sorted(records)]
+
+
 def complete_records(closure_ids, origin_ids, baseline, affected):
     """One record per (closure, origin); unaffected origins keep their baseline."""
     by_pair = {(r["closure_id"], r["origin_id"]): r for r in affected}
@@ -455,10 +509,31 @@ def validator(expected_records, expected_closures, expected_inputs):
         closure_ids = list(manifest["closures"])
         origin_ids = list(manifest["inputs"]["origins"])
         hospital_ids = list(manifest["inputs"]["hospitals"])
-        ranking = validate_records(records, closure_ids, origin_ids, hospital_ids)
-        encoded = encode_results(
-            ranking, records, closure_ids, origin_ids, hospital_ids
-        )
+        place = manifest["inputs"]["dataset"] == "place"
+        if place:
+            lines = (stage / "baseline_outcomes.jsonl").read_bytes().splitlines()
+            before = {}
+            for line in lines:
+                row = strict_json(line)
+                if set(row) != {"origin_id", "baseline"} or row["origin_id"] in before:
+                    raise ValueError("baseline_outcomes.jsonl is malformed")
+                before[row["origin_id"]] = row["baseline"]
+            ranking = validate_changed(
+                records, before, closure_ids, origin_ids, hospital_ids
+            )
+            encoded = encode_changed(
+                ranking, records, before, closure_ids, origin_ids, hospital_ids
+            )
+            if (
+                encoded["baseline_outcomes.jsonl"]
+                != (stage / "baseline_outcomes.jsonl").read_bytes()
+            ):
+                raise ValueError("baseline_outcomes.jsonl is not canonically encoded")
+        else:
+            ranking = validate_records(records, closure_ids, origin_ids, hospital_ids)
+            encoded = encode_results(
+                ranking, records, closure_ids, origin_ids, hospital_ids
+            )
         if (
             encoded["route_outcomes.jsonl"] != outcomes
             or encoded["ranking.csv"] != (stage / "ranking.csv").read_bytes()
@@ -466,7 +541,7 @@ def validator(expected_records, expected_closures, expected_inputs):
         ):
             raise ValueError("ranking and outcome files do not reconcile")
         hashed = ["map.png", "endpoint_convention.csv"]
-        if manifest["inputs"]["dataset"] == "place":
+        if place:
             hashed.append("disconnections.csv")
             expected = encode_csv(
                 disconnection_rows(ranking, records, manifest["closures"]),

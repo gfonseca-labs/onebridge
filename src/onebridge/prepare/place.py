@@ -33,11 +33,14 @@ Origins
     that is also usable. Origins carry no population weights.
 
 Hospitals
-    ``amenity=hospital`` or ``healthcare=hospital`` features. Those tagged
-    ``emergency=yes`` are included; ``emergency=no`` is excluded; untagged
-    ones are included unless their tags or name mark a speciality that
-    rarely has an emergency department (psychiatric, rehabilitation and
-    similar). Arrivals are the campus frontage rule of the NYC study (public
+    ``amenity=hospital`` or ``healthcare=hospital`` features. Only those
+    tagged ``emergency=yes`` are included: outside the US the hospital tag
+    also covers clinics, practices, laboratories and care homes. Untagged
+    ones are listed for review (set ``included`` to true in hospitals.json
+    for one that has an emergency department). Only when no hospital in the
+    area is tagged ``emergency=yes`` are untagged general hospitals assumed
+    to have one, unless their tags or name mark a speciality that rarely
+    does (psychiatric, rehabilitation and similar). Arrivals are the campus frontage rule of the NYC study (public
     roads within 20 m of the grounds; a mapped point gets a 50 m circle) plus
     mapped ``emergency=emergency_ward_entrance`` nodes, each joined to the
     nearest public road within 60 m.
@@ -54,6 +57,7 @@ import ast
 import gzip
 import hashlib
 import json
+import math
 import re
 import tomllib
 from collections import Counter
@@ -77,6 +81,17 @@ from .shared import basemap, bundle_nodes, bundle_ways, used_ways, way_names
 GEOFABRIK_INDEX = "https://download.geofabrik.de/index-v1.json"
 USER_AGENT = f"onebridge/{__version__} (+https://github.com/gfonseca-labs/onebridge)"
 BUFFERS_M = {"primary": 10000, "wide": 20000}
+# The primary routing buffer grows from 10 km until every part of the study
+# rectangle has REACH_HOSPITALS emergency departments within reach, so a
+# rural study does not report clipped roads as lost access. The wide
+# sensitivity is always WIDE_EXTRA_M larger; hospitals and extracts are
+# searched out to the largest wide buffer.
+PRIMARY_STEPS_M = (10000, 15000, 20000)
+WIDE_EXTRA_M = 10000
+REACH_HOSPITALS = 2
+# Roads are longer than the straight line; reach counts a hospital only if it
+# lies within buffer / ROAD_FACTOR.
+ROAD_FACTOR = 1.4
 SPACINGS_M = [500, 250]
 MAX_CONNECTOR_M = 150.0
 ENTRANCE_SEARCH_M = 60.0
@@ -92,6 +107,8 @@ DEFAULT_SPEEDS = {
     "special_slow": {"motorway": 45, "trunk": 35, "link": 15},
     "special_fast": {"motorway": 65, "trunk": 55, "link": 35},
 }
+UNTAGGED = "no emergency tag; set included to true if it has an ED"
+ASSUMED = "no emergency tag; assumed to have an ED (none in the area is tagged)"
 NO_ED = re.compile(
     r"psychiatr|behaviou?ral|mental|rehabilit|long[- ]term|nursing|hospice|"
     r"veterinar|animal|state hospital|dental|eye and ear|cancer|surgery center|"
@@ -115,7 +132,7 @@ def init_place(
     from .extract import routing_polygon
 
     out = Path(out)
-    buffers_m = dict(buffers_m or BUFFERS_M)
+    chosen = dict(buffers_m) if buffers_m else None
     if bbox is None:
         bbox = geocode_bbox(place)
         log("geocoded", repr(place), "to", [round(v, 5) for v in bbox])
@@ -132,7 +149,8 @@ def init_place(
             "designed for a town, city or county part (pass --force to go ahead, "
             "or give a smaller --bbox)"
         )
-    polygon = routing_polygon([west, south, east, north], max(buffers_m.values()), epsg)
+    search_m = max(chosen.values()) if chosen else PRIMARY_STEPS_M[-1] + WIDE_EXTRA_M
+    polygon = routing_polygon([west, south, east, north], search_m, epsg)
 
     out.mkdir(parents=True, exist_ok=False)
     downloads = out / "downloads"
@@ -159,11 +177,20 @@ def init_place(
     log("OpenStreetMap snapshot:", snapshot or "unknown")
 
     hospitals = find_hospitals([downloads / f"{n}.osm.pbf" for n in names], polygon)
+    assume_untagged_if_none_tagged(hospitals, log)
     (out / "hospitals.json").write_text(json.dumps(hospitals, indent=2) + "\n")
     included = sum(h["included"] for h in hospitals)
+    untagged = sum(h["reason"] == UNTAGGED for h in hospitals)
     log(len(hospitals), "hospitals found,", included, "included; see hospitals.json")
+    if untagged:
+        log(untagged, "untagged hospitals left out; check them in hospitals.json")
     if not included:
         raise ValueError("no hospital with an emergency department in the area")
+    buffers_m = chosen or choose_buffers(
+        (x0, y0, x1, y1),
+        [project(h["lon"], h["lat"]) for h in hospitals if h["included"]],
+        log,
+    )
 
     config = out / "config.toml"
     config.write_text(
@@ -367,6 +394,53 @@ def _is_hospital(tags):
     return tags.get("amenity") == "hospital" or tags.get("healthcare") == "hospital"
 
 
+def choose_buffers(box, hospitals_xy, log=print):
+    """Routing buffers whose primary reaches enough EDs from the whole study.
+
+    ``box`` is the study rectangle and ``hospitals_xy`` the included
+    hospitals, both in the study's UTM metres. Samples a 5 x 5 grid of the
+    rectangle; each sample needs ``REACH_HOSPITALS`` hospitals (or all of
+    them, if fewer) within ``primary / ROAD_FACTOR`` in a straight line.
+    """
+    x0, y0, x1, y1 = box
+    samples = [
+        (x0 + (x1 - x0) * i / 4, y0 + (y1 - y0) * j / 4)
+        for i in range(5)
+        for j in range(5)
+    ]
+    need = min(REACH_HOSPITALS, len(hospitals_xy))
+
+    def reaches(primary):
+        limit = primary / ROAD_FACTOR
+        return all(
+            sum(math.dist(p, h) <= limit for h in hospitals_xy) >= need for p in samples
+        )
+
+    primary = next((b for b in PRIMARY_STEPS_M if reaches(b)), None)
+    if primary is None:
+        primary = PRIMARY_STEPS_M[-1]
+        log(
+            f"some of the study is more than {primary / ROAD_FACTOR / 1000:.0f} km "
+            f"from its {need} nearest EDs; disconnections near the edge may "
+            "reflect the routing buffer, so compare the wide run"
+        )
+    buffers = {"primary": primary, "wide": primary + WIDE_EXTRA_M}
+    if primary != PRIMARY_STEPS_M[0]:
+        log("routing buffers widened to reach nearby EDs:", buffers)
+    return buffers
+
+
+def assume_untagged_if_none_tagged(hospitals, log=print):
+    """Where nobody tags emergency departments, assume general hospitals have one."""
+    if any(h["included"] for h in hospitals):
+        return
+    for h in hospitals:
+        if h["reason"] == UNTAGGED:
+            h["included"], h["reason"] = True, ASSUMED
+    if any(h["included"] for h in hospitals):
+        log("no hospital is tagged emergency=yes; assuming untagged general ones")
+
+
 def _hospital_row(hid, tags, geometry):
     name = tags.get("name") or hid
     centre = geometry.representative_point()
@@ -381,7 +455,7 @@ def _hospital_row(hid, tags, geometry):
     elif NO_ED.search(speciality) or NO_ED.search(name):
         included, reason = False, "speciality hospital without an emergency tag"
     else:
-        included, reason = True, "no emergency tag; assumed to have an ED"
+        included, reason = False, UNTAGGED
     return {
         "id": hid,
         "name": name,
@@ -454,7 +528,16 @@ def prepare_place(config_path, extract, study, downloads, out, log=print):
         structures[buffer] = group_structures(
             structure_candidates(roads[buffer], usable, ways, set())
         )
-        ordinary = ordinary_candidates(roads[buffer], usable, ways, nodes)
+        ordinary = ordinary_candidates(
+            roads[buffer], usable, ways, nodes, separated_nodes=False
+        )
+        # Every usable edge must belong to some closure, or `run` would find
+        # a route edge it cannot test.
+        closable = {tuple(e) for g in ordinary + structures[buffer] for e in g["edges"]}
+        if usable - closable:
+            raise ValueError(
+                f"{buffer}: {len(usable - closable)} usable edges are in no closure"
+            )
         folder = out / buffer
         folder.mkdir()
         write_lines(folder / "edges.jsonl.gz", edges[buffer])
