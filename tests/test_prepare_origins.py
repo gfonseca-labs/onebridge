@@ -17,7 +17,7 @@ def lonlat(x, y):
     return list(UNPROJECT(x, y))
 
 
-def test_grid_points_lie_in_the_rectangle_on_the_metre_grid():
+def test_grid_points_lie_in_the_rectangle_on_the_meter_grid():
     grid = candidate_grid(BBOX, 500)
     assert list(grid) == sorted(grid)
     for origin, (x, y, lon, lat) in grid.items():

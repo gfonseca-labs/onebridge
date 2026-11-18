@@ -39,11 +39,14 @@ Hospitals
     ones are listed for review (set ``included`` to true in hospitals.json
     for one that has an emergency department). Only when no hospital in the
     area is tagged ``emergency=yes`` are untagged general hospitals assumed
-    to have one, unless their tags or name mark a speciality that rarely
-    does (psychiatric, rehabilitation and similar). Arrivals are the campus frontage rule of the NYC study (public
-    roads within 20 m of the grounds; a mapped point gets a 50 m circle) plus
-    mapped ``emergency=emergency_ward_entrance`` nodes, each joined to the
-    nearest public road within 60 m.
+    to have one, unless their tags or name mark a specialty that rarely
+    does (psychiatric, rehabilitation and similar).
+
+Arrivals
+    The campus frontage rule of the NYC study (public roads within 20 m of
+    the grounds; a hospital mapped as a point gets a 50 m circle) plus mapped
+    ``emergency=emergency_ward_entrance`` nodes, each joined to the nearest
+    public road within 60 m.
 
 Closures
     Ordinary segments and bridge/tunnel structures, as in the NYC study.
@@ -214,7 +217,7 @@ def covering_extracts(polygon, log=print, index=None):
 
     Extracts that touch the area are taken smallest first, each kept only
     when it covers part of the area the ones before it do not (so two
-    neighbouring states, not the region around them). Uncovered slivers under
+    neighboring states, not the region around them). Uncovered slivers under
     1% of the area (open sea beyond every extract's boundary) are accepted.
     When that fails, the smallest single extract that covers the area is used.
     ``index`` is Geofabrik's ``index-v1.json`` (fetched when not given).
@@ -398,7 +401,7 @@ def choose_buffers(box, hospitals_xy, log=print):
     """Routing buffers whose primary reaches enough EDs from the whole study.
 
     ``box`` is the study rectangle and ``hospitals_xy`` the included
-    hospitals, both in the study's UTM metres. Samples a 5 x 5 grid of the
+    hospitals, both in the study's UTM meters. Samples a 5 x 5 grid of the
     rectangle; each sample needs ``REACH_HOSPITALS`` hospitals (or all of
     them, if fewer) within ``primary / ROAD_FACTOR`` in a straight line.
     """
@@ -443,7 +446,7 @@ def assume_untagged_if_none_tagged(hospitals, log=print):
 
 def _hospital_row(hid, tags, geometry):
     name = tags.get("name") or hid
-    centre = geometry.representative_point()
+    center = geometry.representative_point()
     emergency = tags.get("emergency")
     speciality = " ".join(
         tags.get(k, "") for k in ("healthcare:speciality", "healthcare:specialty")
@@ -459,8 +462,8 @@ def _hospital_row(hid, tags, geometry):
     return {
         "id": hid,
         "name": name,
-        "lon": round(centre.x, 7),
-        "lat": round(centre.y, 7),
+        "lon": round(center.x, 7),
+        "lat": round(center.y, 7),
         "campus": None if geometry.geom_type == "Point" else geometry.wkt,
         "emergency": emergency,
         "included": included,

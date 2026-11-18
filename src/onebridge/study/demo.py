@@ -8,7 +8,7 @@ origins and one turn restriction:
     4 - 5 - 6          no right turn from 1-2 into 2-5 at node 2
 
 Every street takes 30 seconds in each direction. The data is invented; only
-the coordinates are real, so the map has a recognisable place.
+the coordinates are real, so the map has a recognizable place.
 `onebridge demo` writes this bundle and runs `run` and `report` on it.
 """
 

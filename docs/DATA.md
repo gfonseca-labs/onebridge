@@ -57,10 +57,9 @@ carries the updated report,
 
 Its SHA-256 is
 `7608bf9f74202fb362eb8b715b87ecf3ea1b57ed04b9fef8add6d0cb6784b99a`.
-The 24 numerical/data files match the original v0.2.0 report byte-for-byte.
-Only evidence run/map metadata and the map image differ. The original release
-and its assets remain historical records; the pinned extraction above is
-reused unchanged.
+Its 24 data files match the v0.2.0 report byte for byte; only the evidence
+metadata and the map image differ. The v0.2.0 release and its assets are
+left as they were, and the extraction above is still the one to use.
 
 The extraction archive unpacks to `nyc-extract/`; the report archive unpacks
 to `nyc-report/`. The extraction is packaged with a `SHA256SUMS` list and an ODbL notice.
@@ -99,9 +98,8 @@ graph.
 {"edge": [42423514, 103879821, 0], "reasons": [], "speed": {"basis": "osm_source_segment_speeds", "rule": "segments", "seconds": {"baseline": 192.67, "outer35": 192.67, "special_slow": 192.67, "special_fast": 192.67}}, "usable": true}
 ```
 
-The examples illustrate field shapes; the segment-speed values above are
-illustrative, not authoritative source measurements. Use the committed rows
-for actual study values.
+These rows show the format only; the segment times above are made up. The
+real values are in the committed tables.
 
 A `signed` speed replaces the OSM limit with a reviewed signed limit; a
 `segments` speed gives the edge's travel time per scenario directly, costed
@@ -133,23 +131,23 @@ was considered; `lon`/`lat` are `null` where the state record has no point.
 {"corridor": "hudson-holland-tunnel", "river": "Hudson", "edges": [], "ways": [], "opened_edges": []}
 ```
 
-The empty lists above illustrate the schema only; real corridor rows contain
-edge triples and way IDs.
+The lists are empty here to keep the example short; real rows hold edge
+triples and way IDs.
 
 `opened_edges` are corridor edges that the crossing review made usable. They
 are closed only together with their corridor.
 
-## Licences
+## Licenses
 
 - **OpenStreetMap:** © OpenStreetMap contributors, under the Open Database
   License 1.0. This covers `data/nyc-sources` and every extract, bundle and
   report derived from it. They are derived databases and are distributed under
-  the same licence.
+  the same license.
 - **US Census TIGER/Line:** US federal public domain.
 - **NY State Department of Health facility data (health.data.ny.gov):** reuse
   allowed under the OPEN-NY terms of use. Facility names and IDs appear in the
   registry and the report.
-- **New Jersey Department of Health facility data (data.nj.gov):** licence-free
+- **New Jersey Department of Health facility data (data.nj.gov):** license-free
   under the New Jersey Open Data Initiative.
 - **NYC borough boundaries:** read from `data/downloads` and copied into each
   bundle; not distributed in this repository.

@@ -117,10 +117,10 @@ onebridge report --bundle data/nyc-bundle --run out/runs --out out/report
   directory (`ranking.csv`, `route_outcomes.jsonl`, `endpoint_convention.csv`,
   `evidence.json`, `map.png`).
 
-Use a new output directory for each command. Failed commands can leave
-partial directories; inspect them and rerun with a fresh output path.
-Expected success returns exit code 0; invalid arguments return 2. Other
-errors return nonzero and may include a Python traceback. See
+Give each command a new output directory. A failed command can leave a
+partial directory behind; rerun it with a fresh path. Commands exit with 0 on
+success and 2 for invalid arguments; any other error exits nonzero, usually
+with a Python traceback. See
 [architecture and failure behavior](docs/ARCHITECTURE.md).
 `python scripts/download.py` fetches and checks the Census and NYC files;
 [docs/DATA.md](docs/DATA.md) lists every download and
@@ -131,8 +131,9 @@ errors return nonzero and may include a Python traceback. See
 ```
 config/nyc.toml        study area, speeds, grids, pinned downloads
 data/nyc-sources/      reviewed source tables (roads, origins, hospitals, crossings)
-docs/                  METHODS, DATA, RESULTS, REPRODUCE
-scripts/               downloads and release packaging
+docs/                  methods, places, results, data, reproduction, architecture
+scripts/               downloads and release-asset packaging
+tools/                 package build and publication checks used by CI
 src/onebridge/         routing, turn restrictions, closures, ranking, evidence
 src/onebridge/prepare/ extraction and bundle preparation
 src/onebridge/study/   run matrix, scenarios, comparison and report
@@ -149,7 +150,7 @@ tests/
 - [Architecture and failure behavior](docs/ARCHITECTURE.md)
 - [Changelog](CHANGELOG.md)
 
-## Licence
+## License
 
 Code: MIT ([LICENSE](LICENSE)). Data derived from OpenStreetMap, including
 `data/nyc-sources` and every bundle and report built from it, is

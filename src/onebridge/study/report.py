@@ -4,11 +4,13 @@
 
 * ``tables/``: the main and endpoint tables for every run;
 * ``comparison.json``: each sensitivity compared with the primary run;
-* ``evidence/``: ``ranking.csv``, ``route_outcomes.jsonl`` (every closure and
-  origin pair), ``endpoint_convention.csv``, ``map.png`` and ``evidence.json``,
-  published atomically after validation. Place studies add
-  ``disconnections.csv``: every main-ranking closure that cuts an origin off
-  from every ED, which the map draws in its own style.
+* ``evidence/``: ``ranking.csv``, ``route_outcomes.jsonl``,
+  ``endpoint_convention.csv``, ``map.png`` and ``evidence.json``, published
+  atomically after validation. For NYC the outcome file has every (closure,
+  origin) pair. Place studies list only the pairs a closure changes, add
+  ``baseline_outcomes.jsonl``, and add ``disconnections.csv``: every
+  main-ranking closure that cuts an origin off from every ED, which the map
+  draws in its own style.
 """
 
 from __future__ import annotations

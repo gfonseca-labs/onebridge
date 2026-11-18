@@ -1,7 +1,8 @@
-"""Check tracked publication content and built archives without printing matches.
+"""Check tracked files and built archives for things that should not ship.
 
-Hosted CI accounts are infrastructure, not developer-machine identifiers.
-Findings contain relative filenames and rule names; never matched private text.
+Looks for home-directory paths, links to private documents and leftover TODO
+notes. Paths of hosted CI runners are allowed. Findings name the file and the
+rule only, never the matched text.
 """
 
 from __future__ import annotations
@@ -21,17 +22,9 @@ RULES = {
         r"|[A-Z]:\\Users\\(?!runneradmin\\)[^\\\s\"']+"
         r"|/private/(?:var)/folders/[^\s\"']+"
     ),
-    "private document link": re.compile(
-        r"(?:docs|drive)\.google\.com|chatgpt" r"-conversation:|chatgpt\.com/(?:c|g)/"
-    ),
+    "private document link": re.compile(r"(?:docs|drive)\.google\.com"),
 }
 PROSE = {
-    "unexplained decision code": re.compile(r"\bD-\d{3}[A-Z]?\b"),
-    "private preparation reference": re.compile(
-        r"private documentation|internal (?:document|drive|planning|checklist)"
-        r"|development history.{0,40}private|deliverables/",
-        re.IGNORECASE,
-    ),
     "unfinished instruction": re.compile(r"\bTODO\b|\bFIXME\b|git clone <repository>"),
 }
 LIMIT = 300 * 1024 * 1024

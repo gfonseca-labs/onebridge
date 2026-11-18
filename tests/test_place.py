@@ -224,7 +224,7 @@ def _index(*regions):
     }
 
 
-def test_neighbouring_extracts_beat_the_region_around_them():
+def test_neighboring_extracts_beat_the_region_around_them():
     index = _index(
         ("west", box(0, 0, 1, 1)),
         ("east", box(1, 0, 2, 1)),

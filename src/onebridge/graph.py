@@ -16,7 +16,7 @@ ENDPOINT_TOLERANCE_M = 0.01
 
 
 def require_metric_crs(value):
-    """Refuse a graph CRS that is not a projected one measured in metres."""
+    """Refuse a graph CRS that is not a projected one measured in meters."""
     try:
         crs = CRS.from_user_input(value)
     except Exception as error:
@@ -34,7 +34,7 @@ def attach_points(graph, requests):
     ``requests`` maps an ID to ``{"edge": (u, v, key), "fraction": f}``, where
     ``f`` is measured from ``u`` towards ``v``. Only the named direction is
     split; the reverse carriageway needs its own request. Geometry and node
-    ``x``/``y`` must be in the graph's projected CRS, in metres (a UTM zone).
+    ``x``/``y`` must be in the graph's projected CRS, in meters (a UTM zone).
 
     Returns ``(split_graph, attachments, descendants)``: a copy of the graph
     with the edges split, ``{id: node}``, and ``{original_edge: [pieces]}``.

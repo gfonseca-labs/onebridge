@@ -1,7 +1,7 @@
 """Trip origins: a regular grid, a review table, and where each origin joins
 the road network.
 
-Candidate origins are the points of a square grid in UTM metres (zone 18N,
+Candidate origins are the points of a square grid in UTM meters (zone 18N,
 EPSG:32618, for NYC; anchored at zero) that fall inside the study rectangle. Each
 spacing has a review table that marks every candidate as
 
@@ -19,7 +19,7 @@ street) go to the edge that comes first in routing order. Where the
 opposite direction is also usable, the origin may depart that way too.
 
 Census 2020 block populations give each kept origin a weight: a block counts
-toward the grid cell, centred on a grid point, that contains its internal
+toward the grid cell, centered on a grid point, that contains its internal
 point.
 """
 

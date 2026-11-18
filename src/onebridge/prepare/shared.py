@@ -65,6 +65,6 @@ def hospital_locations(registry, campuses):
         if entry["lon"] is not None:
             out[hospital] = entry
         elif hospital in campuses:
-            centre = campuses[hospital].centroid
-            out[hospital] = {"name": entry["name"], "lon": centre.x, "lat": centre.y}
+            center = campuses[hospital].centroid
+            out[hospital] = {"name": entry["name"], "lon": center.x, "lat": center.y}
     return dict(sorted(out.items()))

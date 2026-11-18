@@ -28,7 +28,7 @@ def test_compressed_content_is_checked_without_erasing_source_annotations():
     private = ("/" + "home" + "/example-person/data").encode()
     assert publication.inspect(gzip.compress(private), "roads.json.gz")
     assert publication.inspect(b'{"fixme": "resurvey"}', "roads.json") == []
-    assert publication.inspect(("D-" + "030").encode(), "README.md")
+    assert publication.inspect(("TO" + "DO: finish").encode(), "README.md")
 
 
 def test_release_builder_normalizes_source_metadata(tmp_path):

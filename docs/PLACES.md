@@ -17,7 +17,7 @@ onebridge place "Newport, Rhode Island" --out data/studies/newport
 `place` runs every stage:
 
 1. **init** geocodes the name with Nominatim and takes its bounding box as the
-   study rectangle. It picks the UTM zone at its centre, then downloads the
+   study rectangle. It picks the UTM zone at its center, then downloads the
    smallest set of [Geofabrik](https://download.geofabrik.de/) extracts that
    covers 30 km around the rectangle (for Newport: Rhode Island and
    Massachusetts). It pins their SHA-256, lists every hospital it finds and
@@ -110,7 +110,7 @@ closures look harmless. `init` logs how many untagged hospitals it left out;
 check them in `hospitals.json` and set `included` to `true` for any that has
 an ED, then rerun from `prepare`. Only where no hospital in the area is
 tagged `emergency=yes` are untagged general hospitals assumed to have an ED
-(marked "assumed"), leaving out names or specialities that suggest none
+(marked "assumed"), leaving out names or specialties that suggest none
 (psychiatric, rehabilitation, long-term care and similar).
 
 **Arrivals.** A trip may end at any public road (residential to primary

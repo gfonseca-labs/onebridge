@@ -15,9 +15,10 @@ Primary configuration: 500 m grid, 10 km buffer, baseline speeds, turn-aware.
 The published map shows the 13 EDs selected by at least one primary baseline
 or main-ranking closure route. All 18 EDs are considered by routing; the map
 does not display the five that are never selected in those outcomes.
-The 2.52-minute figure is the conventional median of the released baseline
-outcomes. The v0.2.0 run summary instead selects the upper middle value for
-even counts, yielding 2.53 minutes; see [implementation limits](ARCHITECTURE.md).
+The 2.52-minute figure is the usual median of the released baseline
+outcomes. The v0.2.0 run summary took the upper of the two middle values
+instead and showed 2.53 minutes; 0.2.1 fixed this (see
+[architecture](ARCHITECTURE.md#verification-boundaries)).
 
 ## Leading closures
 
