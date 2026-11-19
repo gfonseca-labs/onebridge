@@ -42,7 +42,7 @@ PUBLIC_CLASSES = frozenset(
 
 
 def read_campuses(path, epsg=NYC_EPSG):
-    """``{hospital: polygon}`` in UTM metres from ``campuses.geojson``."""
+    """``{hospital: polygon}`` in UTM meters from ``campuses.geojson``."""
     project = to_utm(epsg)
     features = json.loads(Path(path).read_text())["features"]
     return {
@@ -63,7 +63,7 @@ def on_structure(tags):
 
 
 class Roads:
-    """Usable public edges near a campus, with their lines in UTM metres."""
+    """Usable public edges near a campus, with their lines in UTM meters."""
 
     def __init__(self, extract, usable, ways, nodes, epsg=NYC_EPSG):
         self.project = to_utm(epsg)

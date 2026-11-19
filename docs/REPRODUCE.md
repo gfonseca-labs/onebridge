@@ -1,14 +1,17 @@
 # Reproducing the NYC study
 
-The test suite runs on Linux and macOS with Python 3.11 and 3.13.
-Version 0.2.1's prepare, run and report stages were checked on macOS with
-Python 3.12 using the public frozen extraction and hash-checked downloads.
-All 24 numerical/data report files match v0.2.0; the map and evidence
-run/map metadata changed.
+The test suite runs on Linux and macOS with Python 3.11 and 3.13. Each
+release has also been rebuilt by hand from the published extraction and the
+hash-checked downloads:
 
-The original v0.2.0 full rebuild was checked on macOS with Python 3.13.
-Its recorded timings below are a historical reference, not a performance
-guarantee for another environment:
+- **0.3.0** (macOS, Python 3.13): every report file, map included, matches
+  v0.2.1 byte for byte. Only the evidence run ID, start time and software
+  versions differ.
+- **0.2.1** (macOS, Python 3.12): all 24 data files match v0.2.0. The map
+  and the evidence metadata changed.
+
+Timings from the v0.2.0 rebuild on macOS with Python 3.13 give a rough idea;
+your machine will differ. In 0.3.0 the `run` step takes about 2 minutes.
 
 | Step | Time | Peak memory |
 | --- | ---: | ---: |
@@ -22,7 +25,7 @@ guarantee for another environment:
 ```sh
 git clone https://github.com/gfonseca-labs/onebridge.git
 cd onebridge
-git checkout v0.2.1
+git checkout v0.3.0
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -e '.[prepare,report,test]'
@@ -104,12 +107,11 @@ onebridge report --bundle data/nyc-bundle --run out/runs --out out/report
 - `route_outcomes.jsonl`, `evidence.json` and `map.png`.
 
 `out/report/comparison.json` compares every sensitivity with the primary run.
-The release preparation reported matching `ranking.csv`,
-`route_outcomes.jsonl`, `endpoint_convention.csv` and `map.png` across rebuilds.
-This is a measured result, not a guarantee across every supported environment.
-`evidence.json` includes a fresh run ID, start time, and package and Python
-versions. A different matplotlib version can change the image without changing
-the numerical data.
+Rebuilds so far have produced identical `ranking.csv`,
+`route_outcomes.jsonl`, `endpoint_convention.csv` and `map.png`, though that
+is not guaranteed on every setup. `evidence.json` always gets a fresh run ID,
+start time, and package and Python versions. A different matplotlib version
+can change the image without changing the numbers.
 
 The repository does not provide a complete lock of the release environment.
 Record your environment alongside any reproduction:

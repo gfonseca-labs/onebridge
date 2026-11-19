@@ -77,8 +77,8 @@ are not comprehensively supported: the primary configuration reads generic
 unconditional `restriction` values, while `restriction:motorcar` is included
 with conditional rules in the sensitivity. The sensitivity activates those
 rules without evaluating a departure clock. Ignored tag families are not
-included in the unrepresented count. This is a limitation of v0.2.0, not a
-complete interpretation of every OSM car restriction.
+included in the unrepresented count. Not every OSM car restriction is
+interpreted.
 
 ## Origins
 
@@ -187,14 +187,15 @@ The test suite checks the engine against independent implementations:
   restrictions;
 - routes against an independent turn-restriction audit.
 
-Release preparation reported agreement with an earlier study build for
-road extraction, usable edges and times, origins, departures, Census weights,
-hospital arrivals and closure candidates. That comparison is historical
-evidence, not a public independent reference implementation. Ordinary-segment
-names were normalized to a stable order (see the changelog).
+Before the first release, the road extraction, usable edges and times,
+origins, departures, Census weights, hospital arrivals and closure candidates
+were compared with an earlier build of the study and matched. That earlier
+build is not published, so treat the comparison as background rather than
+something you can rerun. Ordinary-segment names were put in a stable order at
+the same time (see the changelog).
 
-Public verification uses the tests, committed source tables, release extraction
-and report, and the [rebuild procedure](REPRODUCE.md). CI does not run the full
-NYC rebuild. Agreement between implementations verifies algorithm behavior on
-their inputs; it does not independently validate curated source decisions or
+What you can check yourself: the tests, the committed source tables, the
+release extraction and report, and the [rebuild steps](REPRODUCE.md). CI does
+not run the full NYC rebuild. Matching implementations show the algorithms
+agree on the same inputs. They do not validate the review decisions or
 real-world travel times.

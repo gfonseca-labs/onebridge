@@ -1,1 +1,1 @@
-"""The NYC hospital-access study: prepared inputs, runs, and reports."""
+"""Hospital-access studies: prepared inputs, runs and reports."""

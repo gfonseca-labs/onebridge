@@ -13,6 +13,8 @@ from onebridge.prepare.output import write_lines
 from onebridge.prepare.place import (
     _config_toml,
     _hospital_row,
+    assume_untagged_if_none_tagged,
+    choose_buffers,
     covering_extracts,
     group_structures,
     is_place_config,
@@ -164,14 +166,50 @@ def test_hospital_inclusion_rules():
     point = Point(-71.3, 41.5)
     assert _hospital_row("osm-node-1", {"emergency": "yes"}, point)["included"]
     assert not _hospital_row("osm-node-2", {"emergency": "no"}, point)["included"]
-    untagged = _hospital_row("osm-node-3", {"name": "Newport Hospital"}, point)
-    assert untagged["included"] and "assumed" in untagged["reason"]
+    # Outside the US the hospital tag also covers clinics and care homes, so
+    # an untagged one is listed for review, not assumed to have an ED.
+    untagged = _hospital_row("osm-node-3", {"name": "Felix-Platter-Spital"}, point)
+    assert not untagged["included"] and "set included" in untagged["reason"]
     rehab = _hospital_row("osm-node-4", {"name": "Bay Rehabilitation Hospital"}, point)
     assert not rehab["included"]
     psych = {"healthcare:speciality": "psychiatry"}
     assert not _hospital_row("osm-node-5", psych, point)["included"]
     area = _hospital_row("osm-way-6", {"emergency": "yes"}, box(0, 0, 1, 1))
     assert area["campus"].startswith("POLYGON") and area["lon"] == 0.5
+
+
+def test_untagged_hospitals_are_assumed_only_where_none_is_tagged():
+    point = Point(-71.3, 41.5)
+    tagged = _hospital_row("osm-node-1", {"emergency": "yes"}, point)
+    plain = _hospital_row("osm-node-2", {"name": "General Hospital"}, point)
+    rehab = _hospital_row("osm-node-3", {"name": "Rehabilitation Hospital"}, point)
+    rows = [dict(tagged), dict(plain), dict(rehab)]
+    assume_untagged_if_none_tagged(rows, quiet)
+    assert [r["included"] for r in rows] == [True, False, False]
+    rows = [dict(plain), dict(rehab)]
+    assume_untagged_if_none_tagged(rows, quiet)
+    assert [r["included"] for r in rows] == [True, False]
+    assert "none in the area is tagged" in rows[0]["reason"]
+
+
+def test_routing_buffer_grows_until_the_study_reaches_two_eds():
+    box = (0.0, 0.0, 4000.0, 4000.0)
+    logged = []
+    # A city: two EDs inside the rectangle keep the 10 km default.
+    assert choose_buffers(box, [(1000, 1000), (3000, 3000)], quiet) == {
+        "primary": 10000,
+        "wide": 20000,
+    }
+    # Rural: the second ED is 12 km away, so 10 km of roads is not enough.
+    rural = [(2000, 2000), (2000, 14000)]
+    assert choose_buffers(box, rural, quiet) == {"primary": 20000, "wide": 30000}
+    # Remote: nothing fits; keep the largest step and say so.
+    remote = [(2000, 2000), (60000, 0)]
+    buffers = choose_buffers(box, remote, lambda *a: logged.append(a))
+    assert buffers == {"primary": 20000, "wide": 30000}
+    assert any("compare the wide run" in str(a) for a in logged)
+    # One ED in the whole area: reaching it everywhere is enough.
+    assert choose_buffers(box, [(2000, 2000)], quiet)["primary"] == 10000
 
 
 def _index(*regions):
@@ -186,7 +224,7 @@ def _index(*regions):
     }
 
 
-def test_neighbouring_extracts_beat_the_region_around_them():
+def test_neighboring_extracts_beat_the_region_around_them():
     index = _index(
         ("west", box(0, 0, 1, 1)),
         ("east", box(1, 0, 2, 1)),
@@ -256,6 +294,14 @@ def test_place_bundle_runs_and_reports_without_nyc_inputs(tmp_path):
     assert manifest["inputs"]["dataset"] == "place"
     assert manifest["inputs"]["configuration"]["place"] == "Demo Town"
     assert any("not reviewed" in x for x in manifest["methodology"]["limitations"])
+    # Place evidence lists only changed outcomes, plus one baseline per origin.
+    reference = manifest["validation"]["route_outcomes"]
+    assert "changed outcomes only" in reference["records"]
+    baselines = (evidence / "baseline_outcomes.jsonl").read_text().splitlines()
+    assert len(baselines) == len(manifest["inputs"]["origins"])
+    outcomes = (evidence / "route_outcomes.jsonl").read_text().splitlines()
+    assert len(outcomes) == reference["record_count"]
+    assert all(json.loads(r)["scenario"] != json.loads(r)["baseline"] for r in outcomes)
     comparison = json.loads((tmp_path / "report" / "comparison.json").read_text())
     assert "census-weighted" not in comparison
     assert set(comparison) == {r.name for r in PLACE_RUNS} - {"primary-500-baseline"}

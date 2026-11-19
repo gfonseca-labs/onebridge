@@ -9,7 +9,7 @@ simplified, ``truncate_by_edge``) fed from those local elements instead of
 Overpass, so the result is the graph OSMnx would build for the same data.
 
 OSMnx is pinned to 2.1.1 because the local feed replaces one private
-download function whose behaviour was checked for that version.
+download function whose behavior was checked for that version.
 
 Turn restrictions are kept whole: every restriction relation in either
 extract, in file order, tagged with the extract it came from. A relation on
@@ -55,7 +55,7 @@ _RULE = re.compile(r'\["([^"\]]+)"(?:(?!\])(!~)"([^"\]]*)")?\]')
 
 
 def routing_polygon(origin_bbox, buffer_m, epsg=32618):
-    """The origin rectangle buffered by ``buffer_m`` metres, in lon/lat.
+    """The origin rectangle buffered by ``buffer_m`` meters, in lon/lat.
 
     The buffer is drawn in the study's UTM zone (18N for NYC).
     """
@@ -313,8 +313,8 @@ def extract_roads(config, downloads, out, log=print):
     elements, restrictions = read_osm(paths, footprint)
     log("read", len(elements), "elements and", len(restrictions), "restrictions")
     way_ids = set()
-    for buffer, metres in buffers.items():
-        rows = edge_rows(build_graph(elements, routing_polygon(bbox, metres, epsg)))
+    for buffer, meters in buffers.items():
+        rows = edge_rows(build_graph(elements, routing_polygon(bbox, meters, epsg)))
         write_lines(out / "roads" / f"{buffer}-extract.jsonl.gz", rows)
         way_ids.update(w for row in rows for w in row["ways"])
         log(buffer, len(rows), "edges")

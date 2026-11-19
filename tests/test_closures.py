@@ -5,6 +5,7 @@ import pytest
 
 from onebridge.closures import (
     _best_label,
+    _Guide,
     best_route,
     evaluate_closures,
     evaluate_local,
@@ -104,3 +105,36 @@ def test_best_route_matches_the_label_search(seed):
             )
             end = path[-1][1] if path else starts[0]
             assert label[1] in hospital_at[end]
+
+
+@pytest.mark.parametrize("seed", range(40))
+def test_guided_search_settles_exactly_the_same_labels(seed):
+    """A* re-solves must return bit-identical seconds and the same hospital."""
+    rng = random.Random(1000 + seed)
+    nodes = rng.choice([30, 60, 120])
+    g = nx.MultiDiGraph()
+    g.add_nodes_from(range(nodes))
+    for _ in range(nodes * 3):
+        u, v = rng.sample(range(nodes), 2)
+        # Awkward decimals make rounding differences show up; repeats make ties.
+        cost = rng.choice([0.1, 0.2, 0.3, 0.7, 1 / 3, 2.5, rng.uniform(0.01, 9.0)])
+        g.add_edge(u, v, travel_time=cost)
+    hospital_at = {0: ["h-b"], 1: ["h-a"], 2: ["h-a", "h-c"]}
+    guide = _Guide(g, hospital_at)
+    edges = list(g.edges(keys=True))
+    for _ in range(30):
+        closed = set(rng.sample(edges, rng.choice([1, 2, 5, 20])))
+        starts = tuple(rng.sample(range(nodes), rng.choice([1, 2])))
+        expected = _best_label(g, starts, hospital_at, closed)
+        assert guide.label(starts, closed) == expected
+
+
+def test_guided_search_skips_nodes_that_never_reach_a_hospital():
+    g = nx.MultiDiGraph()
+    g.add_edge("o", "h", travel_time=1.0)
+    g.add_edge("o", "dead", travel_time=0.5)
+    g.add_edge("dead", "end", travel_time=0.5)
+    guide = _Guide(g, {"h": ["h-1"]})
+    assert "dead" not in guide.bound and "end" not in guide.bound
+    assert guide.label(("o",), {("o", "h", 0)}) is None
+    assert guide.label(("o",), set()) == (1.0, "h-1")

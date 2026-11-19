@@ -31,4 +31,4 @@ The map in `map.png` carries the credit "Map data: OpenStreetMap contributors
 ## Code
 
 The code is under the MIT License (see `LICENSE`). Dependencies are installed
-from their own distributions and keep their own licences.
+from their own distributions and keep their own licenses.

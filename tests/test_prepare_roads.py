@@ -18,7 +18,7 @@ NODES = {1: [-73.99, 40.75], 2: [-73.98, 40.75], 3: [-74.10, 40.75], 4: [-74.09,
 
 
 def nyc():
-    # A box around nodes 1 and 2 only, in UTM metres.
+    # A box around nodes 1 and 2 only, in UTM meters.
     (x0, y0), (x1, y1) = (to_utm()(-73.995, 40.74), to_utm()(-73.975, 40.76))
     return box(x0, y0, x1, y1)
 

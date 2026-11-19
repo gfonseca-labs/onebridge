@@ -17,15 +17,17 @@ onebridge place "Newport, Rhode Island" --out data/studies/newport
 `place` runs every stage:
 
 1. **init** geocodes the name with Nominatim and takes its bounding box as the
-   study rectangle. It picks the UTM zone at its centre, then downloads the
+   study rectangle. It picks the UTM zone at its center, then downloads the
    smallest set of [Geofabrik](https://download.geofabrik.de/) extracts that
-   covers the 20 km routing buffer (for Newport: Rhode Island and
-   Massachusetts). It pins their SHA-256 and lists every hospital it finds.
+   covers 30 km around the rectangle (for Newport: Rhode Island and
+   Massachusetts). It pins their SHA-256, lists every hospital it finds and
+   sizes the routing buffers (see below).
 2. **extract**, **prepare**, **run** and **report** then run as in the NYC
    study, with the default rules below.
 
 The evidence lands in `data/studies/newport/report/evidence/`
-(`ranking.csv`, `disconnections.csv`, `map.png`, `evidence.json`).
+(`ranking.csv`, `disconnections.csv`, `map.png`, `evidence.json`,
+`route_outcomes.jsonl`, `baseline_outcomes.jsonl`).
 
 To check the inputs first, run the stages one at a time:
 
@@ -47,9 +49,15 @@ Options for `init` and `place`:
 | `--pbf FILE ...` | local `.osm.pbf` extracts, instead of downloading |
 | `--force` | allow a study rectangle more than 60 km across |
 
-The study rectangle is where origins are placed. Roads are taken 10 km
-(primary) and 20 km (wide sensitivity) beyond it, so trips can reach
-hospitals outside it.
+The study rectangle is where origins are placed. Roads are taken a
+routing buffer beyond it, so trips can reach hospitals outside it. The
+primary buffer starts at 10 km and grows to 15 or 20 km until every part of
+the rectangle has two included EDs within reach (a straight line of up to
+buffer ÷ 1.4, allowing for roads that wind). The wide sensitivity is always
+10 km more. In a rural study a 10 km buffer can hold a single ED, and
+closing the road to it would look like lost access when a farther ED is
+still open. `config.toml` records the chosen buffers; edit them there, and
+`init` logs a warning when even 20 km does not reach two EDs everywhere.
 
 ## What the study folder holds
 
@@ -86,19 +94,24 @@ usable road that is not a motorway, trunk or link lies within 150 m. Every
 kept origin has equal weight; there are no population weights.
 
 **Hospitals.** Hospitals are features tagged `amenity=hospital` or
-`healthcare=hospital` within the wide routing buffer. Inclusion follows the
-`emergency` tag:
+`healthcare=hospital` within 30 km of the study rectangle. Only those
+tagged `emergency=yes` count as having an ED:
 
 | Tags | Included |
 | --- | --- |
 | `emergency=yes` | yes |
 | `emergency=no` | no |
-| no `emergency` tag, name or speciality suggests no emergency department (psychiatric, rehabilitation, long-term care, and similar) | no |
-| no `emergency` tag, anything else | yes, marked "assumed to have an ED" |
+| no `emergency` tag | no, listed as "set included to true if it has an ED" |
 
-Check the assumed ones in `hospitals.json`: OpenStreetMap often lacks the
-tag, and a hospital without an ED makes nearby closures look less harmful
-than they are.
+Outside the US the hospital tag also covers clinics, practices, laboratories
+and care homes: in Basel an untagged urology practice, a pathology institute
+and nursing homes all carry it. Counting such a place as an ED makes nearby
+closures look harmless. `init` logs how many untagged hospitals it left out;
+check them in `hospitals.json` and set `included` to `true` for any that has
+an ED, then rerun from `prepare`. Only where no hospital in the area is
+tagged `emergency=yes` are untagged general hospitals assumed to have an ED
+(marked "assumed"), leaving out names or specialties that suggest none
+(psychiatric, rehabilitation, long-term care and similar).
 
 **Arrivals.** A trip may end at any public road (residential to primary
 class, at grade) within 20 m of the hospital grounds. A hospital mapped only
@@ -121,9 +134,32 @@ top-10 red lines, with its own legend entry. The ranking itself does not
 change. Closures of an origin's own departure road or a hospital's arrival
 road stay in `endpoint_convention.csv`, as in the NYC study.
 
-For Newport, closing the Newport (Pell) Bridge cuts 6 Jamestown origins off
-and Fort Adams Drive cuts off 3. Most other rows are short roads that are
-the only way out for one origin.
+**Evidence size.** A city study can have 15,000 closures and 4,500
+origins. One outcome record per pair, as in the NYC evidence, would be
+gigabytes. Place evidence lists in `route_outcomes.jsonl` only the
+(closure, origin) pairs whose outcome changes; `baseline_outcomes.jsonl`
+holds each origin's outcome with every road open, and a missing pair keeps
+it. The ranking is recomputed from these two files and must match
+`ranking.csv` exactly, as for NYC.
+
+For Newport, closing the Newport (Pell) Bridge leads the delay ranking: the
+6 Jamestown origins drive to South County Hospital over the Jamestown
+Verrazzano Bridge instead, 7 to 10 minutes later. Fort Adams Drive cuts 3
+origins off. Most other rows are short roads that are the only way out for
+one origin. With a 10 km buffer, South County Hospital lay outside the
+routing area and the bridge looked like it cut Jamestown off; that is why
+the buffer is now sized to reach two EDs.
+
+**Run time.** On a recent Mac (one process, no parallelism):
+
+| Study | Origins (500 m) | Closures | Whole `place` run |
+| --- | ---: | ---: | ---: |
+| Newport, RI | 109 | 1,956 | 4 min |
+| Bar Harbor, ME | 426 | 2,314 | 3 min |
+| Basel, CH (Swiss, French and German extracts) | 179 | 3,261 | 7 min |
+| Pittsburgh, PA | 1,126 | 19,302 | 10 min |
+
+Downloads are extra: Pennsylvania is 350 MB, Switzerland 550 MB.
 
 **Runs.** Eight of the NYC study's ten configurations apply. The
 outer-urban 35 mph run and the NYC U-turn ban are NYC-specific and are not
@@ -140,9 +176,9 @@ top of it:
 - Emergency departments are inferred from tags. The arrival points are campus
   frontage, not verified entrances.
 - Origins are not weighted by population.
-- A hospital beyond the 10 km routing buffer is not a destination in the
-  primary run. Compare the wide (20 km) run before reading much into a
-  closure near the buffer's edge.
+- A hospital beyond the routing buffer is not a destination. The buffer is
+  sized to reach two EDs from the whole study, but where it cannot, compare
+  the wide run before reading much into a disconnection near the edge.
 - The default speeds suit the United States.
 
 Treat a top-ranked closure as a question to check, for example against

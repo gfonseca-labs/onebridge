@@ -20,7 +20,8 @@ the bundle alone:
     map.json                   optional map title, credit and margin
     study.json                 dataset kind, projection and configured buffers/grids
 
-``<buffer>`` is ``primary`` (10 km routing buffer) or ``wide`` (20 km).
+``<buffer>`` is ``primary`` or ``wide`` (10 and 20 km for NYC; a place
+study sizes its own).
 Edges are ``[u, v, key]`` OSM node pairs; times are in seconds per speed
 scenario.
 
@@ -51,12 +52,12 @@ def _lines(path):
 
 
 def to_utm(epsg=NYC_EPSG):
-    """Projection from WGS84 lon/lat to UTM metres (default zone 18N)."""
+    """Projection from WGS84 lon/lat to UTM meters (default zone 18N)."""
     return Transformer.from_crs(4326, epsg, always_xy=True).transform
 
 
 def from_utm(epsg=NYC_EPSG):
-    """Projection from UTM metres back to WGS84 lon/lat."""
+    """Projection from UTM meters back to WGS84 lon/lat."""
     return Transformer.from_crs(epsg, 4326, always_xy=True).transform
 
 
@@ -73,7 +74,7 @@ def utm_epsg(lon, lat):
 
 
 def read_boundary(path, epsg=NYC_EPSG):
-    """The union of a GeoJSON file's polygons, in UTM metres."""
+    """The union of a GeoJSON file's polygons, in UTM meters."""
     features = json.loads(Path(path).read_text())["features"]
     merged = union_all([shape(f["geometry"]) for f in features])
     return transform(merged, to_utm(epsg), interleaved=False)
@@ -103,7 +104,7 @@ class Bundle:
         )
 
     def nyc_boundary(self):
-        """NYC (water included) as one polygon in UTM metres."""
+        """NYC (water included) as one polygon in UTM meters."""
         return self._cached(
             "nyc", lambda: read_boundary(self.path / "nyc-boundary.geojson")
         )
@@ -167,7 +168,7 @@ class Bundle:
         return self.study().get("epsg", NYC_EPSG)
 
     def project(self):
-        """Projection from lon/lat to the bundle's UTM metres."""
+        """Projection from lon/lat to the bundle's UTM meters."""
         return to_utm(self.epsg())
 
     def basemap(self, buffer):

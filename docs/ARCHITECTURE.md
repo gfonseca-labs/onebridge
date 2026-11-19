@@ -70,17 +70,15 @@ and unrestricted turn graphs with ordinary graphs. Synthetic integration
 tests cover the pipeline and report. This does not provide external model
 validation, field verification or a full NYC regression in CI.
 
-The v0.2.0 run summary selects the upper middle reachable time for an even
-origin count, rather than averaging the two middle values. For the released
-96-origin baseline, the summary calculation gives 2.5307202464 minutes;
-the conventional median of its released route outcomes is 2.5179093751
-minutes, correctly rounded to 2.52 in the README. The summary's
-`median_minutes` field therefore differs from the documented statistic.
-The current source corrects that field using the conventional median; existing
-v0.2.0 archives and tags retain their original bytes.
+In v0.2.0 the run summary's `median_minutes` took the upper of the two
+middle times for an even origin count instead of averaging them. For the
+96-origin baseline that gave 2.5307202464 minutes; the true median of the
+released route outcomes is 2.5179093751, the 2.52 shown in the README.
+Version 0.2.1 fixed the calculation. The v0.2.0 tag and archives were left
+unchanged.
 
-Version 0.2.1 also removes the local bundle path from run summaries. A content
-hash identifies the bundle without publishing a user's filesystem location.
+Version 0.2.1 also dropped the local bundle path from run summaries; a
+content hash identifies the bundle instead.
 
 The primary turn configuration handles generic unconditional restrictions;
 the sensitivity also includes `restriction:motorcar` and conditional tags.

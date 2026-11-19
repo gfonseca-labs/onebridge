@@ -34,7 +34,7 @@ trunk = 50
 link = 35
 
 # Study area. Origins lie in the rectangle (WGS84 lon/lat); roads are taken
-# from the rectangle buffered by each routing buffer, in EPSG:32618 metres.
+# from the rectangle buffered by each routing buffer, in EPSG:32618 meters.
 [area]
 origin_bbox = [-74.035, 40.690, -73.930, 40.770]
 buffers_m = { primary = 10000, wide = 20000 }

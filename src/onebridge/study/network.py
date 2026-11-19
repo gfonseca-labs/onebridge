@@ -31,7 +31,7 @@ class Network:
 
 
 def road_graph(bundle, buffer, speeds):
-    """Directed road graph in the bundle's UTM metres with ``travel_time``
+    """Directed road graph in the bundle's UTM meters with ``travel_time``
     and ``length``.
 
     Only edges that endpoints attach to carry a geometry; the rest are never

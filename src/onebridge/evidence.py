@@ -1,8 +1,9 @@
 """Evidence records: validation and deterministic encoding.
 
-The published outcome file holds one record per (closure, origin) pair. The
-ranking is always recomputed from those records, so a ranking that does not
-follow from its outcomes cannot be written.
+The NYC outcome file holds one record per (closure, origin) pair; a place
+study's lists only the pairs a closure changes, next to one baseline outcome
+per origin. Either way the ranking is recomputed from those records, so a
+ranking that does not follow from its outcomes cannot be written.
 """
 
 from __future__ import annotations
@@ -114,6 +115,114 @@ def validate_records(records, closure_ids, origin_ids, hospital_ids) -> list[dic
             }
         )
     return rank_closures(rows)
+
+
+def validate_changed(
+    records, baseline, closure_ids, origin_ids, hospital_ids
+) -> list[dict]:
+    """Check changed-only records and return the ranking they imply.
+
+    Place studies are too large for one record per (closure, origin) pair, so
+    ``records`` lists only the pairs whose outcome differs from ``baseline``
+    (``{origin_id: outcome}``), in closure then origin order. A missing pair
+    keeps its baseline outcome and adds zero minutes. ``math.fsum`` is exact,
+    so the totals equal those of the complete record set.
+    """
+    closure_ids = _unique_ids(closure_ids, "closure_id")
+    origin_ids = _unique_ids(origin_ids, "origin_id")
+    hospitals = set(_unique_ids(hospital_ids, "hospital_id"))
+    if set(baseline) != set(origin_ids):
+        raise ValueError("baseline outcomes do not match the origins")
+    times = {oid: _outcome(baseline[oid], hospitals) for oid in origin_ids}
+    reachable = sum(t is not None for t in times.values())
+    if not reachable:
+        raise ValueError("no origin reaches a hospital")
+    closure_at = {cid: i for i, cid in enumerate(closure_ids)}
+    origin_at = {oid: i for i, oid in enumerate(origin_ids)}
+    deltas = {cid: [] for cid in closure_ids}
+    comparable = dict.fromkeys(closure_ids, reachable)
+    disconnected = dict.fromkeys(closure_ids, 0)
+    previous = None
+    for record in records:
+        if not isinstance(record, dict) or set(record) != RECORD_FIELDS:
+            raise ValueError("record has the wrong fields")
+        cid, oid = record["closure_id"], record["origin_id"]
+        if cid not in closure_at or oid not in origin_at:
+            raise ValueError("record names an unknown closure or origin")
+        position = (closure_at[cid], origin_at[oid])
+        if previous is not None and position <= previous:
+            raise ValueError("records are duplicated or out of order")
+        previous = position
+        if record["baseline"] != baseline[oid]:
+            raise ValueError(f"baseline of {oid} differs in {cid}")
+        if record["scenario"] == record["baseline"]:
+            raise ValueError("an unchanged outcome is listed as changed")
+        before = times[oid]
+        after = _outcome(record["scenario"], hospitals)
+        if (before is None and after is not None) or (
+            before is not None and after is not None and after < before
+        ):
+            raise ValueError("a closure made a route faster")
+        lost = before is not None and after is None
+        if (
+            type(record["newly_disconnected"]) is not bool
+            or record["newly_disconnected"] != lost
+        ):
+            raise ValueError("newly_disconnected contradicts the outcomes")
+        delta = record["finite_added_minutes"]
+        if before is not None and after is not None:
+            require_number(delta, "finite_added_minutes")
+            if delta != (after - before) / 60:
+                raise ValueError("finite_added_minutes does not match the times")
+            deltas[cid].append(delta)
+        elif delta is not None:
+            raise ValueError("finite_added_minutes must be null without both times")
+        comparable[cid] -= lost
+        disconnected[cid] += lost
+    rows = []
+    for cid in closure_ids:
+        total = require_number(math.fsum(deltas[cid]), "total_finite_added_minutes")
+        count = comparable[cid]
+        rows.append(
+            {
+                "closure_id": cid,
+                "total_finite_added_minutes": total,
+                "mean_finite_added_minutes": total / count if count else None,
+                "finite_comparable_origins": count,
+                "baseline_reachable_origins": reachable,
+                "baseline_unreachable_origins": len(origin_ids) - reachable,
+                "newly_disconnected_origins": disconnected[cid],
+                "newly_disconnected_share": disconnected[cid] / reachable,
+                "retained_origins": len(origin_ids),
+            }
+        )
+    return rank_closures(rows)
+
+
+def encode_changed(ranking, records, baseline, closure_ids, origin_ids, hospital_ids):
+    """Validate changed-only records, then encode the ranking and both files."""
+    if (
+        validate_changed(records, baseline, closure_ids, origin_ids, hospital_ids)
+        != ranking
+    ):
+        raise ValueError("ranking does not follow from the outcome records")
+    outcomes = encode_jsonl(records)
+    baselines = encode_jsonl(
+        {"origin_id": oid, "baseline": baseline[oid]} for oid in sorted(baseline)
+    )
+    return {
+        "ranking.csv": encode_csv(ranking),
+        "route_outcomes.jsonl": outcomes,
+        "baseline_outcomes.jsonl": baselines,
+        "reference": {
+            "path": "route_outcomes.jsonl",
+            "record_count": len(records),
+            "records": "changed outcomes only; a missing (closure, origin) pair "
+            "keeps its outcome in baseline_outcomes.jsonl",
+            "sha256": hashlib.sha256(outcomes).hexdigest(),
+            "baseline_sha256": hashlib.sha256(baselines).hexdigest(),
+        },
+    }
 
 
 def encode_jsonl(records) -> bytes:
